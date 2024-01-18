@@ -19,10 +19,10 @@ Web-based code editor focusing on local-first development. Currently implemented
 
 ## Installation and Setup
 
-1. Clone the repository: `git clone [repository-url]`
+1. Clone the repository: `git clone https://github.com/ShaulLavo/Code-Editor.git`
 2. Install dependencies: `npm install`
 3. Start the development server: `npm run dev`
-4. Access the editor at `localhost:[port]`
+4. Access the editor at `localhost:3000`
 
 ## Contribution Guidelines
 
