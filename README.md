@@ -15,7 +15,7 @@ Web-based code editor focusing on local-first development. Currently implemented
 
 - Collaborative Editing: Implementing real-time, multi-user editing capabilities.
 - Replicache Integration: For offline functionality and seamless data synchronization.
-- Server-Side Transformations (SST): To extend server-side processing and logic.
+- SST : Implementing SST for streamlined development and deployment on AWS.
 
 ## Installation and Setup
 
