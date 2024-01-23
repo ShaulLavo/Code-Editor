@@ -2,5 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+.cm-activeLine,
+.cm-activeLineGutter {
+  background-color: #272c3b !important;
 }

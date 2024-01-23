@@ -26,6 +26,8 @@
     "@codemirror/search": "^6.5.5",
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.23.0",
+    "@lezer/highlight": "^1.2.0",
+    "@lezer/javascript": "^1.4.13",
     "@replit/codemirror-vscode-keymap": "^6.0.2",
     "solid-codemirror": "^2.3.1",
     "solid-js": "^1.7.6"
