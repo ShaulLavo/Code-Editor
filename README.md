@@ -1,5 +1,3 @@
-# Text Editor Project - README.md
-
 ## Project Description
 
 Web-based code editor focusing on local-first development. Currently implemented with Solid JS, planning to incorporate collaborative features, Replicache, and SST in future versions.
