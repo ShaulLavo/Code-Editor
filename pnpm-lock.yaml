@@ -35,12 +35,18 @@ dependencies:
   '@replit/codemirror-vscode-keymap':
     specifier: ^6.0.2
     version: 6.0.2(@codemirror/autocomplete@6.12.0)(@codemirror/commands@6.3.3)(@codemirror/language@6.10.0)(@codemirror/lint@6.4.2)(@codemirror/search@6.5.5)(@codemirror/state@6.4.0)(@codemirror/view@6.23.0)
+  replicache:
+    specifier: ^14.1.0
+    version: 14.1.0
   solid-codemirror:
     specifier: ^2.3.1
     version: 2.3.1(@codemirror/state@6.4.0)(@codemirror/view@6.23.0)(solid-js@1.7.6)
   solid-js:
     specifier: ^1.7.6
     version: 1.7.6
+  thememirror:
+    specifier: ^2.0.1
+    version: 2.0.1(@codemirror/language@6.10.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.0)
 
 devDependencies:
   autoprefixer:
@@ -417,6 +423,11 @@ packages:
       '@babel/helper-validator-identifier': 7.22.5
       to-fast-properties: 2.0.0
     dev: true
+
+  /@badrap/valita@0.3.0:
+    resolution: {integrity: sha512-bvsH70aYKOdB3rXVZXhJgGpHqxt+TcVperVvXCo9Dotpj9u0jBgQP5jgPmZNbIz0FyTvMP/oPUzqn6WS2L0l3w==}
+    engines: {node: '>= 16'}
+    dev: false
 
   /@changesets/apply-release-plan@7.0.0:
     resolution: {integrity: sha512-vfi69JR416qC9hWmFGSxj7N6wA5J222XNBmezSVATPWDVPIF7gkd4d8CpbEbXmRWbVrkoli3oerGS6dcL/BGsQ==}
@@ -1006,6 +1017,22 @@ packages:
       '@codemirror/search': 6.5.5
       '@codemirror/state': 6.4.0
       '@codemirror/view': 6.23.0
+    dev: false
+
+  /@rocicorp/lock@1.0.3:
+    resolution: {integrity: sha512-aXRTG0Ul89KrV30J/p209RhMCRLIFFIT6RepvCPBicKTHaUtTlmJipgLl6QmSt5HJYYJ5P8Czp+4T4G1+6fcgQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      '@rocicorp/resolver': 1.0.1
+    dev: false
+
+  /@rocicorp/logger@5.2.1:
+    resolution: {integrity: sha512-/co4DJq3opjULOHe7hMAho/E2WJuv6rMOJ1QDlCKsPHZ09XkkKHDM8dPu+odmDHWBb5aMnnzC92WQLd05CTxnA==}
+    dev: false
+
+  /@rocicorp/resolver@1.0.1:
+    resolution: {integrity: sha512-9+IK9C/du8Nrqn3LaKBxJwV4H2HyIpa7HlTuc4eQ938lL4faxN6TuQV+IpvX6PxQeR14X7yMtz1f9dfiS5fvlw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
 
   /@solid-devtools/debugger@0.22.1(solid-js@1.7.6):
@@ -2813,6 +2840,17 @@ packages:
       set-function-name: 2.0.1
     dev: false
 
+  /replicache@14.1.0:
+    resolution: {integrity: sha512-hFCnTBvFTw4j/cggSlzPkDpFkXnYGgSI18qYBTRtPR24m+J92dGvorGqh9+CFvzeSxF+VTf7zeAvF/MKqb3y+w==}
+    engines: {node: '>=14.8.0'}
+    hasBin: true
+    dependencies:
+      '@badrap/valita': 0.3.0
+      '@rocicorp/lock': 1.0.3
+      '@rocicorp/logger': 5.2.1
+      '@rocicorp/resolver': 1.0.1
+    dev: false
+
   /require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
@@ -3214,6 +3252,18 @@ packages:
   /term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
+    dev: false
+
+  /thememirror@2.0.1(@codemirror/language@6.10.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.0):
+    resolution: {integrity: sha512-d5i6FVvWWPkwrm4cHLI3t9AT1OrkAt7Ig8dtdYSofgF7C/eiyNuq6zQzSTusWTde3jpW9WLvA9J/fzNKMUsd0w==}
+    peerDependencies:
+      '@codemirror/language': ^6.0.0
+      '@codemirror/state': ^6.0.0
+      '@codemirror/view': ^6.0.0
+    dependencies:
+      '@codemirror/language': 6.10.0
+      '@codemirror/state': 6.4.0
+      '@codemirror/view': 6.23.0
     dev: false
 
   /thenify-all@1.6.0:

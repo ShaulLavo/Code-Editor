@@ -29,7 +29,9 @@
     "@lezer/highlight": "^1.2.0",
     "@lezer/javascript": "^1.4.13",
     "@replit/codemirror-vscode-keymap": "^6.0.2",
+    "replicache": "^14.1.0",
     "solid-codemirror": "^2.3.1",
-    "solid-js": "^1.7.6"
+    "solid-js": "^1.7.6",
+    "thememirror": "^2.0.1"
   }
 }
