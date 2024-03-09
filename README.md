@@ -1,26 +1,20 @@
-## Project Description
+# Code Editor Component with Solid JS and CodeMirror
 
-Web-based code editor focusing on local-first development. Currently implemented with Solid JS, planning to incorporate collaborative features, Replicache, and SST in future versions.
+A streamlined web-based code editor component, leveraging the power of Solid JS and CodeMirror for an efficient and interactive coding experience.
 
 ## Current Implementation
 
-- Framework: Solid JS
-- Primary Feature: Code Editing
-- Deployment: Web-based platform
-- Architecture: Client-side execution with local data handling
-
-## Future Enhancements
-
-- Collaborative Editing: Implementing real-time, multi-user editing capabilities.
-- Replicache Integration: For offline functionality and seamless data synchronization.
-- SST : Implementing SST for streamlined development and deployment on AWS.
+- **Framework**: Solid JS
+- **Primary Feature**: Code Editing
+- **Deployment**: Web-based component
+- **Architecture**: Focuses solely on providing a code editor interface without local data handling complexities.
 
 ## Installation and Setup
 
-1. Clone the repository: `git clone https://github.com/ShaulLavo/Code-Editor.git`
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Access the editor at `localhost:3000`
+Integrating the Code Editor into your project is now simpler with NPM. Follow these steps:
+
+1. Install the package: `npm install solidjs-editor`
+2. Import it into your project as needed.
 
 ## Contribution Guidelines
 
