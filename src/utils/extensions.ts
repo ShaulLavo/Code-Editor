@@ -16,11 +16,16 @@ import {
 } from '@codemirror/view'
 import { defaultKeymap } from './keymap'
 import { createCodeMirror } from 'solid-codemirror'
+import { Accessor } from 'solid-js'
+import { currentTheme } from '../themes/themes'
 
 type CreateExtension = ReturnType<typeof createCodeMirror>['createExtension']
 
-export function createExtensions(createExtension: CreateExtension) {
-	createExtension(lineNumbers())
+export function createExtensions(
+	createExtension: CreateExtension,
+	showLineNumber?: Accessor<boolean>
+) {
+	// createExtension(lineNumbers())
 	createExtension(gutter({ class: 'cm-gutter' }))
 	createExtension(highlightActiveLineGutter())
 	createExtension(highlightSpecialChars())
@@ -36,5 +41,10 @@ export function createExtensions(createExtension: CreateExtension) {
 	createExtension(highlightActiveLine())
 	createExtension(highlightSelectionMatches())
 	createExtension(keymap.of(defaultKeymap))
+
 	createExtension(javascript({ jsx: true, typescript: true }))
+	if (showLineNumber instanceof Function) {
+		createExtension(() => (showLineNumber() ? lineNumbers() : []))
+	} else createExtension(() => lineNumbers())
+	createExtension(currentTheme)
 }

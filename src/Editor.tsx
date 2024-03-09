@@ -1,48 +1,66 @@
 import { createCodeMirror } from 'solid-codemirror'
-import { Accessor, Setter, Signal, createSignal, type Component } from 'solid-js'
-import { AppTsx, sampleClass, sampleFunc } from './constants'
-import { createExtensions } from './extensions'
-import { ThemeKey, ThemeSetting, themeSettings } from './themes'
+import { Accessor, Setter, Show, createEffect } from 'solid-js'
+import { createExtensions } from './utils/extensions'
+import {
+	ThemeKey,
+	currentBackground,
+	currentColor,
+	currentThemeName,
+	setTheme,
+	themeSettings
+} from './themes/themes'
 
-export const Editor = ({ code, setCode }: { code: Accessor<string>; setCode: Setter<string> }) => {
-	const [showLineNumber, setShowLineNumber] = createSignal(true)
-
-	const [currentThemeSetting, setCurrentThemeSetting] = createSignal<ThemeSetting>(
-		themeSettings.poimandres
-	)
-
-	const changeTheme = (themeKey: keyof typeof themeSettings) => {
-		setCurrentThemeSetting(themeSettings[themeKey])
-	}
-
-	const currentTheme = () => currentThemeSetting().theme
-	const currentBackground = () => currentThemeSetting().background
-	const currentColor = () => currentThemeSetting().color
-
+export interface EditorProps {
+	code: Accessor<string>
+	setCode: Setter<string>
+	showTopBar?: Accessor<boolean>
+	defaultTheme?: ThemeKey
+	showLineNumber?: Accessor<boolean>
+}
+function capitalizeFirstLetter(word: string): string {
+	return word.charAt(0).toUpperCase() + word.slice(1)
+}
+export const Editor = ({
+	code,
+	setCode,
+	showTopBar,
+	defaultTheme,
+	showLineNumber
+}: EditorProps) => {
 	const { ref: EditorRef, createExtension } = createCodeMirror({
 		onValueChange: setCode,
 		value: code()
 	})
-	let wrapperRef: HTMLElement = null!
-
-	createExtensions(createExtension)
-	createExtension(currentTheme)
+	let header: HTMLDivElement = null!
+	createEffect(() => {
+		console.log(showTopBar!())
+	})
+	createExtensions(createExtension, showLineNumber)
+	defaultTheme && setTheme(defaultTheme)
 
 	return (
-		<main
-			ref={wrapperRef}
-			class='bg-background-dark h-max'
-			style={{ 'background-color': currentBackground() }}>
-			<select
-				style={{ 'background-color': currentBackground(), color: currentColor() }}
-				onChange={e => {
-					changeTheme(e.currentTarget.value as ThemeKey)
-				}}>
-				<option value='poimandres'>Poimandres</option>
-				<option value='barf'>Barf</option>
-				<option value='dracula'>Dracula</option>
-				<option value='ayuLight'>Ayu Light</option>
-			</select>
+		<main style={{ 'font-family': 'JetBrains Mono, monospace' }}>
+			<Show when={showTopBar?.()}>
+				<div
+					ref={header}
+					class='bg-background-dark h-max'
+					style={{ 'background-color': currentBackground() }}>
+					<select
+						style={{ 'background-color': currentBackground(), color: currentColor() }}
+						onChange={e => {
+							setTheme(e.currentTarget.value as ThemeKey)
+						}}>
+						{Object.keys(themeSettings).map(theme => {
+							return (
+								<option selected={theme === currentThemeName()} value={theme}>
+									{capitalizeFirstLetter(theme)}
+								</option>
+							)
+						})}
+					</select>
+				</div>
+			</Show>
+
 			<div ref={EditorRef} />
 		</main>
 	)

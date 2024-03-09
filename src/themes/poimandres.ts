@@ -18,7 +18,7 @@ export const poimandres = createTheme({
 		caret: bg,
 		selection: select,
 		gutterBackground: bg,
-		gutterForeground: gray,
+		gutterForeground: '#383b4d',
 		lineHighlight: select
 	},
 	styles: [

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-.cm-activeLine,
-.cm-activeLineGutter {
-  /* background-color: #272c3b !important; */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/JetBrainsMonoNerdFontMono-Regular.ttf') format('truetype');
 }
