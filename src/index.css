@@ -6,3 +6,6 @@
   font-family: 'JetBrains Mono';
   src: url('./assets/JetBrainsMonoNerdFontMono-Regular.ttf') format('truetype');
 }
+.cm-editor.cm-focused {
+  outline: none;
+}

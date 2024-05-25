@@ -145,6 +145,10 @@ const App: Component = () => {
 }
 
 export default App
-`
 
-export { sampleClass, sampleFunc, AppTsx }
+
+`
+const all = sampleClass+ '\n'+ 'sampleFunc' + '\n' + AppTsx
+
+
+export { sampleClass, sampleFunc, AppTsx, all }

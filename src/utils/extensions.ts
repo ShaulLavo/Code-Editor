@@ -17,11 +17,12 @@ import {
 import { defaultKeymap } from './keymap'
 import { createCodeMirror } from 'solid-codemirror'
 import { Accessor } from 'solid-js'
-import { currentTheme } from '../themes/themes'
+import { currentTheme } from '../themeStore'
+import * as themes from '@uiw/codemirror-themes-all';
 
 type CreateExtension = ReturnType<typeof createCodeMirror>['createExtension']
 
-export function createExtensions(
+export function createDefaultExtensions(
 	createExtension: CreateExtension,
 	showLineNumber?: Accessor<boolean>
 ) {
@@ -41,7 +42,6 @@ export function createExtensions(
 	createExtension(highlightActiveLine())
 	createExtension(highlightSelectionMatches())
 	createExtension(keymap.of(defaultKeymap))
-
 	createExtension(javascript({ jsx: true, typescript: true }))
 	if (showLineNumber instanceof Function) {
 		createExtension(() => (showLineNumber() ? lineNumbers() : []))
