@@ -6,6 +6,7 @@ import { highlightSelectionMatches } from '@codemirror/search';
 import { EditorState } from '@codemirror/state';
 import {
 	drawSelection,
+	EditorView,
 	gutter,
 	highlightActiveLine,
 	highlightActiveLineGutter,
@@ -19,6 +20,7 @@ import { createCodeMirror } from 'solid-codemirror';
 import { Accessor } from 'solid-js';
 import { currentTheme } from '../themeStore';
 import * as themes from '@uiw/codemirror-themes-all';
+import { showMinimap } from '@replit/codemirror-minimap';
 
 type CreateExtension = ReturnType<typeof createCodeMirror>['createExtension'];
 
@@ -41,6 +43,7 @@ export function createDefaultExtensions(
 	createExtension(rectangularSelection());
 	createExtension(highlightActiveLine());
 	createExtension(highlightSelectionMatches());
+	createExtension(EditorView.lineWrapping);
 	createExtension(keymap.of(defaultKeymap));
 	createExtension(javascript({ jsx: true, typescript: true }));
 	createExtension(() => (showLineNumber?.() ? lineNumbers() : []));

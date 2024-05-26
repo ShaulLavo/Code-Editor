@@ -9,3 +9,8 @@
 .cm-editor.cm-focused {
   outline: none;
 }
+
+/* #minimap {
+  position: fixed;
+  top: 24px;
+} */

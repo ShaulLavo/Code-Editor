@@ -19,12 +19,11 @@ const themeSettings = {
 type ThemeKey = keyof typeof themeSettings;
 type ThemeSetting = (typeof themeSettings)[ThemeKey];
 
-const [currentThemeName, setTheme] = makePersisted(createSignal<ThemeKey>('tokyoNightStorm'));
+const [currentThemeName, setTheme] = makePersisted(createSignal<ThemeKey>('duotoneDark'));
 
 
 
 const currentThemeSettings = () => themeSettings[currentThemeName()];
-
 const currentTheme = () => currentThemeSettings().theme;
 const currentColor = () => currentThemeSettings().color;
 const currentBackground = () => currentThemeSettings().background;
