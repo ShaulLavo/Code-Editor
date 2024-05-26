@@ -11,11 +11,15 @@ import {
 import { formatCode } from './format'
 import { all } from './constants/samples'
 
+//todo add LSP https://github.com/FurqanSoftware/codemirror-languageserver
+//todo add lint for client side maybe?
+
 function capitalizeFirstLetter (word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1)
 }
 const App: Component = () => {
   const [code, setCode] = createSignal(all)
+  const [showLineNumber, setShowLineNumber] = createSignal(false)
   let header: HTMLDivElement = null!
 
   return (
@@ -47,13 +51,18 @@ const App: Component = () => {
               </option>
             )
           })}
-        </select>
-        <button onMouseDown={async () => setCode(await formatCode(code()))}>
-          Format
+        </select>{' '}
+        <button
+          style={{
+            color: currentColor()
+          }}
+          onMouseDown={() => setShowLineNumber(!showLineNumber())}
+        >
+          Toggle Line Number
         </button>
       </div>
 
-      <Editor code={code} setCode={setCode} />
+      <Editor showLineNumber={showLineNumber} code={code} setCode={setCode} />
     </main>
   )
 }

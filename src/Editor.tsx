@@ -26,10 +26,12 @@ export const Editor = ({
     onValueChange: setCode,
     value: code()
   })
+  //this function does a heavy string compare
   createEditorControlledValue(editorView, code)
   createShortcut(
     ['Alt', 'Shift', 'F'],
     async () => {
+      console.log('alt shift f', editorView())
       const formatted = await formatCode(code())
       setCode(formatted)
     },
@@ -37,7 +39,9 @@ export const Editor = ({
   )
   createDefaultExtensions(createExtension, showLineNumber)
   defaultTheme && setTheme(defaultTheme)
-  onMount(() => {})
+  onMount(() => {
+    console.log(editorView())
+  })
 
   return <div ref={EditorRef} />
 }
