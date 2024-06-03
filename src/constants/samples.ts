@@ -14,6 +14,31 @@ class SpaceHopper implements MysteriousDevice {
         return input + 420;
     }
 }
+
+class CosmicShaker implements MysteriousDevice {
+    compute(input: number): number {
+        return input / 13;
+    }
+}
+
+class NebulaMixer implements MysteriousDevice {
+    compute(input: number): number {
+        return input - 99;
+    }
+}
+
+class GalaxyTwister implements MysteriousDevice {
+    compute(input: number): number {
+        return input ** 2;
+    }
+}
+
+class StarBlender implements MysteriousDevice {
+    compute(input: number): number {
+        return input % 7;
+    }
+}
+
 // This function uses our highly advanced (read: fictional) devices
 function operateDevice(device: MysteriousDevice, input: number): string {
     const result = device.compute(input);
@@ -24,16 +49,33 @@ function operateDevice(device: MysteriousDevice, input: number): string {
 // Creating objects of our "state-of-the-art" technology
 const blender = new QuantumBlender();
 const hopper = new SpaceHopper();
+const shaker = new CosmicShaker();
+const mixer = new NebulaMixer();
+const twister = new GalaxyTwister();
+const starBlender = new StarBlender();
 
 // Let's put these devices to "serious" use
 console.log(operateDevice(blender, 3.14)); // Let's blend some numbers!
 console.log(operateDevice(hopper, 1.21)); // Time to hop through space!
-;`
+console.log(operateDevice(shaker, 10.99)); // Shake the cosmos!
+console.log(operateDevice(mixer, 456.78)); // Mix the nebula!
+console.log(operateDevice(twister, 8)); // Twist the galaxy!
+console.log(operateDevice(starBlender, 14)); // Blend the stars!
+
+
+
+
+
+`;
 
 const sampleFunc = `import { quantumFluxCapacitor } from 'time-travel-stuff';
 import { infiniteImprobabilityDrive } from 'hitchhiker-tools-42';
 import { fluxIncinerator } from 'definitely-not-real-tech';
 import { unicornSparkles } from 'mythical-critters';
+import { dragonFire } from 'fantasy-elements';
+import { phoenixFeathers } from 'rebirth-tools';
+import { fairyDust } from 'enchanted-essentials';
+import { elvenWisdom } from 'ancient-knowledge';
 
 function sumArray(numbers: number[]): number {
     // Pretend these imports do something meaningful
@@ -41,19 +83,50 @@ function sumArray(numbers: number[]): number {
     infiniteImprobabilityDrive.calculate();
     fluxIncinerator.incinerate();
     unicornSparkles.addMagic();
+    dragonFire.ignite();
+    phoenixFeathers.rebirth();
+    fairyDust.sprinkle();
+    elvenWisdom.guide();
 
     return numbers.reduce((acc, val) => acc + val, 0);
 }
 
-const numbers = [3.14159, 2.71828, 1.61803];
+function multiplyArray(numbers: number[]): number {
+    // Using our mystical tools again for multiplication
+    quantumFluxCapacitor.activate();
+    infiniteImprobabilityDrive.calculate();
+    fluxIncinerator.incinerate();
+    unicornSparkles.addMagic();
+    dragonFire.ignite();
+    phoenixFeathers.rebirth();
+    fairyDust.sprinkle();
+    elvenWisdom.guide();
+
+    return numbers.reduce((acc, val) => acc * val, 1);
+}
+
+const numbers = [3.14159, 2.71828, 1.61803, 42, 7, 13];
 const result = sumArray(numbers);
 
 console.log(\`The sum, calculated with a dash of magic and pseudoscience, is: \${result} ✨\`);
+const extraNumbers = [0.57721, 1.41421, 2.23606, 3.14159, 2.71828];
+const extraResult = sumArray(extraNumbers);
+console.log(\`The extra sum, with even more magic, is: \${extraResult} 🪄\`);
+
+const product = multiplyArray(numbers);
+console.log(\`The product, calculated with a fusion of magic and science, is: \${product} 🧙‍♂️\`);
+const extraProduct = multiplyArray(extraNumbers);
+console.log(\`The extra product, with even more magical fusion, is: \${extraProduct} 🧬\`);
 
 
 
 
-`
+
+
+
+`;
+
+
 const AppTsx = `import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { history } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
@@ -147,8 +220,8 @@ const App: Component = () => {
 export default App
 
 
-`
-const all = sampleClass+ '\n'+ 'sampleFunc' + '\n' + AppTsx
+`;
+const all = sampleClass + '\n' + 'sampleFunc' + '\n' + AppTsx;
 
 
-export { sampleClass, sampleFunc, AppTsx, all }
+export { sampleClass, sampleFunc, AppTsx, all };

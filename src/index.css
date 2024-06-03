@@ -3,14 +3,64 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: url('./assets/JetBrainsMonoNerdFontMono-Regular.ttf') format('truetype');
+	font-family: 'JetBrains Mono';
+	src: url('./assets/JetBrainsMonoNerdFontMono-Regular.ttf') format('truetype');
 }
 .cm-editor.cm-focused {
-  outline: none;
+	outline: none;
 }
 
 /* #minimap {
   position: fixed;
   top: 24px;
 } */
+
+/* .ͼot .cm-minimap-overlay-container.cm-minimap-overlay-off {
+  display: block;
+  height: 100px;
+} */
+
+.ResizeablePanelGroup {
+	display: flex;
+}
+
+.ResizeablePanelGroup-ResizeHandle {
+	--size-px: 4px;
+
+	flex-grow: 0;
+	flex-shrink: 0;
+
+	/* Remove default styles for button */
+	border: none;
+	padding: 0;
+
+	border-radius: 8px;
+	background-color: #ccc;
+}
+
+.ResizeablePanelGroup-ResizeHandle_disabled {
+	cursor: not-allowed;
+}
+
+.ResizeablePanelGroup > .ResizeablePanelGroup-ResizeHandle {
+	width: var(--size-px);
+}
+
+.ResizeablePanelGroup
+	> .ResizeablePanelGroup-ResizeHandle:not(
+		.ResizeablePanelGroup-ResizeHandle_disabled
+	) {
+	cursor: ew-resize;
+}
+
+.ResizeablePanelGroup_vertical > .ResizeablePanelGroup-ResizeHandle {
+	height: var(--size-px);
+	width: 100%;
+}
+
+.ResizeablePanelGroup_vertical
+	> .ResizeablePanelGroup-ResizeHandle:not(
+		.ResizeablePanelGroup-ResizeHandle_disabled
+	) {
+	cursor: ns-resize;
+}

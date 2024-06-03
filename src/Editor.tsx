@@ -1,146 +1,106 @@
-import { createCodeMirror, createEditorControlledValue } from 'solid-codemirror'
-import {
-	Accessor,
-	Setter,
-	createEffect,
-	createResource,
-	onMount
-} from 'solid-js'
-import { ThemeKey, setTheme } from './themeStore'
-import { createDefaultExtensions } from './utils/extensions'
-import {
-	createShortcut,
-	useKeyDownEvent,
-	useKeyDownList
-} from '@solid-primitives/keyboard'
-import { formatCode } from './format'
-import { showMinimap } from '@replit/codemirror-minimap'
-import { EditorView } from '@codemirror/view'
+import { createShortcut } from '@solid-primitives/keyboard';
+import { createCodeMirror, createEditorControlledValue } from 'solid-codemirror';
+import { Accessor, createEffect, createSignal, on, onMount } from 'solid-js';
+import { createDefaultExtensions } from './services/extensions';
+import { preitter } from './services/preitter';
+import { ThemeKey } from './stores/theme';
+import { AsyncWorker } from './workers/services/AsyncWorker';
+import { TypeScriptServer, TypeScriptServerResults } from './workers/services/TypeScriptServer';
+import { linter, setDiagnostics, lintGutter, } from '@codemirror/lint';
+import { TsWorker } from './App';
+
+
 
 export interface EditorProps {
-	code: Accessor<string>
-	setCode: Setter<string>
-	defaultTheme?: ThemeKey
-	showLineNumber?: Accessor<boolean>
-	formatOnMount?: Accessor<boolean>
+  // code: Accessor<string>;
+  // setCode: Setter<string>;
+  defaultCode: string;
+  defaultTheme?: ThemeKey;
+  showLineNumber?: Accessor<boolean>;
+  formatOnMount?: Accessor<boolean>;
+  postMessage: TsWorker['postMessage'];
 }
-// const create =
+
 export const Editor = ({
-	code,
-	setCode,
-	defaultTheme,
-	showLineNumber,
-	formatOnMount = () => true
+  // code,
+  // setCode,
+  postMessage,
+  defaultCode,
+  defaultTheme,
+  showLineNumber,
+  formatOnMount = () => true
 }: EditorProps) => {
-<<<<<<< HEAD
+  const [code, setCode] = createSignal(defaultCode);
   const {
     ref: editorRef,
     createExtension,
     editorView
   } = createCodeMirror({
-    onValueChange: setCode,
+    onValueChange: code => {
+      setCode(code);
+      // updateServer(code);
+    },
     value: code()
-  })
-  let minimapRef: HTMLDivElement = null!
-
+  });
+  const [isMounted, setIsMounted] = createSignal(false);
   //this function does a heavy string compare
   // maybe set flag on input instead
   // maybe length check but that fails sometimes
-  createEditorControlledValue(editorView, code)
+  createEditorControlledValue(editorView, code);
   createShortcut(
     ['Alt', 'Shift', 'F'],
     async () => {
-      const formatted = await formatCode(code())
-      setCode(formatted)
+      const formatted = await preitter.format(code());
+      setCode(formatted);
     },
     { preventDefault: true, requireReset: true }
-  )
-  createExtension(
-    showMinimap.compute(['doc'], state => {
-      console.log(state)
-      return {
-        create: (v: EditorView) => {
-          const dom = document.createElement('div')
-          // v.dom.appendChild(dom)
-          // dom.style.zIndex = '1000'
-          return { dom }
-        },
-        /* optional */
-        eventHandlers: {
-          contextmenu: e => console.log(e)
-        },
-        displayText: 'characters',
-        showOverlay: 'mouse-over'
-        // gutters: [{ 1: '#00FF00', 2: '#00FF00' }]
-      }
-    })
-  )
+  );
+  createShortcut(
+    ['Alt', 'Shift', 'Ï'],
+    async () => {
+      console.log('alt shift f', editorView());
+      const formatted = await preitter.format(code());
+      setCode(formatted);
+    },
+    { preventDefault: true, requireReset: true }
+  );
 
-  createDefaultExtensions(createExtension, showLineNumber)
-  defaultTheme && setTheme(defaultTheme)
-  onMount(() => {
-    console.log(minimapRef)
-  })
+
+
+  createEffect(on(code, async (code) => {
+    console.log('code');
+
+    const { payload: { success } } = await postMessage({ type: 'update', code });
+    console.log('update', success);
+  }, { defer: true }));
+
+
+
+  createDefaultExtensions(createExtension, showLineNumber);
+
+
+  // createExtension(linter(async () => {
+  //   const { payload: { success, data } } = await postMessage({ type: 'diagnose', code: code() });
+  //   console.log('diagnose', success, data);
+  //   if (!success || !data) return [];
+  //   return data;
+  // }, {
+  //   autoPanel: true, markerFilter(diagnostics, state) {
+  //     return diagnostics.filter(diag => true);
+  //   },
+  // }));
+  // createExtension(lintGutter());
+  onMount(async () => {
+    setIsMounted(true);
+    const { payload: { success, data } } = await postMessage({ type: 'diagnose', code: code() });
+
+    // setCode(await preitter.format(code()));
+    setDiagnostics(editorView().state, data ?? []);
+  });
 
   return (
     <>
       <div ref={editorRef} />
     </>
-  )
-=======
-	const {
-		ref: EditorRef,
-		createExtension,
-		editorView
-	} = createCodeMirror({
-		onValueChange: setCode,
-		value: code()
-	})
-
-	//this function does a heavy string compare
-	createEditorControlledValue(editorView, code)
-	createShortcut(
-		['Alt', 'Shift', 'F'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-	createShortcut(
-		['Alt', 'Shift', 'F'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-	createShortcut(
-		['Alt', 'Shift', 'Ï'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-
-	const key = useKeyDownList()
-	createEffect(() => {
-		console.log(key())
-	})
-
-	createDefaultExtensions(createExtension, showLineNumber)
-	defaultTheme && setTheme(defaultTheme)
-	onMount(async () => {
-		if (formatOnMount()) {
-			//maybe add a blocking before mount
-			setCode(await formatCode(code()))
-		}
-	})
-
-	return <div ref={EditorRef} />
->>>>>>> 6fdf052bc0239ca4792d8af6364d5eb77f07fe57
-}
+  );
+};
