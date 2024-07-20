@@ -1,38 +1,28 @@
-import { createCodeMirror, createEditorControlledValue } from 'solid-codemirror'
-import {
-	Accessor,
-	Setter,
-	createEffect,
-	createResource,
-	onMount
-} from 'solid-js'
-import { ThemeKey, setTheme } from './themeStore'
-import { createDefaultExtensions } from './utils/extensions'
-import {
-	createShortcut,
-	useKeyDownEvent,
-	useKeyDownList
-} from '@solid-primitives/keyboard'
-import { formatCode } from './format'
-import { showMinimap } from '@replit/codemirror-minimap'
-import { EditorView } from '@codemirror/view'
+import { createCodeMirror, createEditorControlledValue } from 'solid-codemirror';
+import { Accessor, Setter, createEffect, onMount } from 'solid-js';
+import { ThemeKey, setTheme } from './themeStore';
+import { createDefaultExtensions } from './utils/extensions';
+import { createShortcut } from '@solid-primitives/keyboard';
+import { formatCode } from './format';
+import { showMinimap, MinimapConfig } from '@replit/codemirror-minimap';
+import { EditorView } from '@codemirror/view';
+import { Compartment, StateEffect } from '@codemirror/state';
 
 export interface EditorProps {
-	code: Accessor<string>
-	setCode: Setter<string>
-	defaultTheme?: ThemeKey
-	showLineNumber?: Accessor<boolean>
-	formatOnMount?: Accessor<boolean>
+  code: Accessor<string>;
+  setCode: Setter<string>;
+  defaultTheme?: ThemeKey;
+  showLineNumber?: Accessor<boolean>;
+  formatOnMount?: Accessor<boolean>;
 }
 // const create =
 export const Editor = ({
-	code,
-	setCode,
-	defaultTheme,
-	showLineNumber,
-	formatOnMount = () => true
+  code,
+  setCode,
+  defaultTheme,
+  showLineNumber,
+  formatOnMount = () => true
 }: EditorProps) => {
-<<<<<<< HEAD
   const {
     ref: editorRef,
     createExtension,
@@ -40,107 +30,60 @@ export const Editor = ({
   } = createCodeMirror({
     onValueChange: setCode,
     value: code()
-  })
-  let minimapRef: HTMLDivElement = null!
+  });
+  let minimapRef: HTMLDivElement = null!;
 
   //this function does a heavy string compare
   // maybe set flag on input instead
   // maybe length check but that fails sometimes
-  createEditorControlledValue(editorView, code)
+  createEditorControlledValue(editorView, code);
   createShortcut(
     ['Alt', 'Shift', 'F'],
     async () => {
-      const formatted = await formatCode(code())
-      setCode(formatted)
+      const formatted = await formatCode(code());
+      setCode(formatted);
     },
     { preventDefault: true, requireReset: true }
-  )
-  createExtension(
-    showMinimap.compute(['doc'], state => {
-      console.log(state)
-      return {
-        create: (v: EditorView) => {
-          const dom = document.createElement('div')
-          // v.dom.appendChild(dom)
-          // dom.style.zIndex = '1000'
-          return { dom }
-        },
-        /* optional */
-        eventHandlers: {
-          contextmenu: e => console.log(e)
-        },
-        displayText: 'characters',
-        showOverlay: 'mouse-over'
-        // gutters: [{ 1: '#00FF00', 2: '#00FF00' }]
-      }
-    })
-  )
+  );
+  createShortcut(
+    ['Alt', 'Shift', 'Ï'],
+    async () => {
+      console.log('alt shift f', editorView());
+      const formatted = await formatCode(code());
+      setCode(formatted);
+    },
+    { preventDefault: true, requireReset: true }
+  );
 
-  createDefaultExtensions(createExtension, showLineNumber)
-  defaultTheme && setTheme(defaultTheme)
-  onMount(() => {
-    console.log(minimapRef)
-  })
+  // queueMicrotask(() => {
+  // })
+  createDefaultExtensions(createExtension, showLineNumber);
+  defaultTheme && setTheme(defaultTheme);
+
+  // createEffect(() => {
+  //   if (editorView()) {
+  //     const compartment = new Compartment()
+  //     editorView().dispatch({
+  //       effects: StateEffect.appendConfig.of(
+  //         showMinimap.compute([], state => {
+  //           // return null
+  //           return {
+  //             create: () => ({ dom: document.createElement('div') }),
+  //             displayText: 'characters',
+  //             showOverlay: 'mouse-over'
+  //           }
+  //         })
+  //       )
+  //     })
+  //   }
+  // })
+  onMount(async () => {
+    // console.log(editorView())
+  });
 
   return (
     <>
       <div ref={editorRef} />
     </>
-  )
-=======
-	const {
-		ref: EditorRef,
-		createExtension,
-		editorView
-	} = createCodeMirror({
-		onValueChange: setCode,
-		value: code()
-	})
-
-	//this function does a heavy string compare
-	createEditorControlledValue(editorView, code)
-	createShortcut(
-		['Alt', 'Shift', 'F'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-	createShortcut(
-		['Alt', 'Shift', 'F'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-	createShortcut(
-		['Alt', 'Shift', 'Ï'],
-		async () => {
-			console.log('alt shift f', editorView())
-			const formatted = await formatCode(code())
-			setCode(formatted)
-		},
-		{ preventDefault: true, requireReset: true }
-	)
-
-	const key = useKeyDownList()
-	createEffect(() => {
-		console.log(key())
-	})
-
-	createDefaultExtensions(createExtension, showLineNumber)
-	defaultTheme && setTheme(defaultTheme)
-	onMount(async () => {
-		if (formatOnMount()) {
-			//maybe add a blocking before mount
-			setCode(await formatCode(code()))
-		}
-	})
-
-	return <div ref={EditorRef} />
->>>>>>> 6fdf052bc0239ca4792d8af6364d5eb77f07fe57
-}
+  );
+};

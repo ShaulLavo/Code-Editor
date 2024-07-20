@@ -29,11 +29,11 @@ export function createDefaultExtensions(
 	showLineNumber?: Accessor<boolean>
 ) {
 	// createExtension(lineNumbers())
-	createExtension(gutter({ class: 'cm-gutter' }));
-	createExtension(highlightActiveLineGutter());
+	// createExtension(gutter({ class: 'cm-gutter' }));
+	// createExtension(highlightActiveLineGutter());
+	// createExtension(foldGutter());
 	createExtension(highlightSpecialChars());
 	createExtension(history());
-	createExtension(foldGutter());
 	createExtension(drawSelection());
 	createExtension(EditorState.allowMultipleSelections.of(true));
 	createExtension(indentOnInput());
@@ -48,4 +48,5 @@ export function createDefaultExtensions(
 	createExtension(javascript({ jsx: true, typescript: true }));
 	createExtension(() => (showLineNumber?.() ? lineNumbers() : []));
 	createExtension(currentTheme);
+	// createExtension(EditorView.contentAttributes.of({ spellcheck: "true" }),);
 }
