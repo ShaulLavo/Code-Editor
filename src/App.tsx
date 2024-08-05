@@ -1,5 +1,6 @@
-import { createSignal, type Component } from 'solid-js'
-import { Editor } from './Editor'
+import { For, createSignal, type Component } from 'solid-js';
+import { Editor } from './Editor';
+import { all } from './constants/samples';
 import {
   ThemeKey,
   currentBackground,
@@ -7,20 +8,16 @@ import {
   currentThemeName,
   setTheme,
   themeSettings
-} from './themeStore'
-import { formatCode } from './format'
-import { all } from './constants/samples'
+} from './themeStore';
+import { Formmater, formmaterName, setFormmater } from './format';
+import { editor, setEditor, miniMap, setMiniMap, setCode, code, setShowLineNumber, showLineNumber } from './editorStore';
 
-//todo add LSP https://github.com/FurqanSoftware/codemirror-languageserver
-//todo add lint for client side maybe?
 
-function capitalizeFirstLetter (word: string): string {
-  return word.charAt(0).toUpperCase() + word.slice(1)
+function capitalizeFirstLetter(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 const App: Component = () => {
-  const [code, setCode] = createSignal(all.repeat(10))
-  const [showLineNumber, setShowLineNumber] = createSignal(false)
-  let header: HTMLDivElement = null!
+
 
   return (
     <main
@@ -31,9 +28,8 @@ const App: Component = () => {
       }}
     >
       <div
-        ref={header}
         class='bg-background-dark h-max'
-        style={{ 'background-color': currentBackground() }}
+        style={{ 'background-color': currentBackground(), color: currentColor() }}
       >
         <select
           style={{
@@ -41,17 +37,28 @@ const App: Component = () => {
             color: currentColor()
           }}
           onChange={e => {
-            setTheme(e.currentTarget.value as ThemeKey)
+            setTheme(e.currentTarget.value as ThemeKey);
           }}
         >
-          {Object.keys(themeSettings).map(theme => {
-            return (
+          <For each={Object.keys(themeSettings)}>
+            {(theme) =>
               <option selected={theme === currentThemeName()} value={theme}>
                 {capitalizeFirstLetter(theme)}
               </option>
-            )
-          })}
-        </select>{' '}
+            }
+          </For>
+
+        </select> {' '}|{' '}
+
+        <button
+          style={{
+            color: currentColor()
+          }}
+          onMouseDown={async () => setCode(await Formmater.prettier(code()))}
+        >
+          prettier
+        </button>
+        {' '}|{' '}
         <button
           style={{
             color: currentColor()
@@ -60,11 +67,20 @@ const App: Component = () => {
         >
           Toggle Line Number
         </button>
+        {' '}|{' '}
+        <button
+          style={{
+            color: currentColor()
+          }}
+          onMouseDown={() => miniMap().style.display = miniMap().style.display === 'none' ? 'block' : 'none'}
+        >
+          Toggle MiniMap
+        </button>
       </div>
 
       <Editor showLineNumber={showLineNumber} code={code} setCode={setCode} />
     </main>
-  )
-}
+  );
+};
 
-export default App
+export default App;

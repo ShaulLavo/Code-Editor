@@ -28,7 +28,7 @@ const hopper = new SpaceHopper();
 // Let's put these devices to "serious" use
 console.log(operateDevice(blender, 3.14)); // Let's blend some numbers!
 console.log(operateDevice(hopper, 1.21)); // Time to hop through space!
-;`
+;`;
 
 const sampleFunc = `import { quantumFluxCapacitor } from 'time-travel-stuff';
 import { infiniteImprobabilityDrive } from 'hitchhiker-tools-42';
@@ -53,7 +53,7 @@ console.log(\`The sum, calculated with a dash of magic and pseudoscience, is: \$
 
 
 
-`
+`;
 const AppTsx = `import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { history } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
@@ -145,10 +145,8 @@ const App: Component = () => {
 }
 
 export default App
+`;
+const all = sampleClass + '\n' + 'sampleFunc' + '\n' + AppTsx;
 
 
-`
-const all = sampleClass+ '\n'+ 'sampleFunc' + '\n' + AppTsx
-
-
-export { sampleClass, sampleFunc, AppTsx, all }
+export { sampleClass, sampleFunc, AppTsx, all };
