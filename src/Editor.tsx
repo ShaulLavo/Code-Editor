@@ -1,47 +1,57 @@
-import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
-import { history } from '@codemirror/commands';
-import { javascript } from '@codemirror/lang-javascript';
-import {
-  bracketMatching,
-  indentOnInput
-} from '@codemirror/language';
-import { highlightSelectionMatches } from '@codemirror/search';
-import { EditorState } from '@codemirror/state';
-import {
-  EditorView,
-  drawSelection,
-  highlightActiveLine,
-  highlightSpecialChars,
-  keymap,
-  lineNumbers,
-  rectangularSelection
-} from '@codemirror/view';
-import { showMinimap } from '@replit/codemirror-minimap';
-import { createShortcut, useKeyDownList } from '@solid-primitives/keyboard';
-import {
-  tsAutocompleteWorker,
-  tsFacetWorker,
-  tsHoverWorker,
-  tsLinterWorker,
-  tsSyncWorker
-} from '@valtown/codemirror-ts';
-import { type WorkerShape } from '@valtown/codemirror-ts/worker';
-import * as Comlink from 'comlink';
 import {
   Accessor,
   Setter,
   createEffect,
   createSignal,
+  on,
   onCleanup,
   onMount
 } from 'solid-js';
-import { createEditorControlledValue } from './controlledValue';
+import { ThemeKey, setTheme } from './themeStore';
+import { createShortcut, useKeyDownList } from '@solid-primitives/keyboard';
+import { Formmater, formatter, formmaterName } from './format';
+import { showMinimap, MinimapConfig } from '@replit/codemirror-minimap';
+import { Compartment, StateEffect } from '@codemirror/state';
+import { type WorkerShape } from '@valtown/codemirror-ts/worker';
+import {
+  tsFacetWorker,
+  tsSyncWorker,
+  tsLinterWorker,
+  tsAutocompleteWorker,
+  tsHoverWorker,
+  tsFacet,
+  tsSync,
+  tsLinter,
+  tsAutocomplete,
+  tsHover
+} from '@valtown/codemirror-ts';
+import * as Comlink from 'comlink';
+import { all } from './constants/samples';
 import { createCompartmentExtension } from './createCompartmentExtension';
-import { formatter, formmaterName } from './format';
-import { editor, setEditor, miniMap, setMiniMap } from './editorStore';
-import { ThemeKey, currentTheme, setTheme } from './themeStore';
+import { history } from '@codemirror/commands';
+import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
+import { javascript } from '@codemirror/lang-javascript';
+import {
+  bracketMatching,
+  foldGutter,
+  indentOnInput
+} from '@codemirror/language';
+import { highlightSelectionMatches } from '@codemirror/search';
+import { EditorState } from '@codemirror/state';
+import {
+  drawSelection,
+  EditorView,
+  gutter,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  keymap,
+  lineNumbers,
+  rectangularSelection
+} from '@codemirror/view';
 import { defaultKeymap } from './utils/keymap';
-
+import { currentTheme } from './themeStore';
+import * as themes from '@uiw/codemirror-themes-all';
 export interface EditorProps {
   code: Accessor<string>;
   setCode: Setter<string>;
@@ -49,6 +59,14 @@ export interface EditorProps {
   showLineNumber?: Accessor<boolean>;
   formatOnMount?: Accessor<boolean>;
 }
+import { createEditorControlledValue } from './controlledValue';
+import {
+  createDefaultMapFromCDN,
+  createSystem,
+  createVirtualTypeScriptEnvironment
+} from '@typescript/vfs';
+import ts from 'typescript';
+import { refs } from './editorStore';
 interface Worker extends WorkerShape {
   close: () => void;
 
@@ -67,16 +85,19 @@ export const Editor = ({
 
 
   onMount(() => {
+    const start = performance.now();
+
     const innerWorker = new Worker(new URL('./worker.ts', import.meta.url), {
       type: 'module'
     });
+
     const worker = Comlink.wrap<Worker>(innerWorker);
     const baseEditorState = EditorState.create({
       doc: code(),
       extensions: [
         showMinimap.compute([], () => {
           return {
-            create: () => ({ dom: miniMap() }),
+            create: () => ({ dom: refs.miniMap }),
             showOverlay: 'mouse-over',
             displayText: 'blocks'
           };
@@ -114,7 +135,7 @@ export const Editor = ({
       if (e.data === 'ready') {
         await worker.initialize();
         const currentView = new EditorView({
-          parent: editor(),
+          parent: refs.editor,
           dispatch: (transaction, editorView) => {
             currentView.update([transaction]);
             setCode(editorView.state.doc.toString());
@@ -122,9 +143,17 @@ export const Editor = ({
         });
         currentView.setState(baseEditorState);
 
+        refs.miniMap.addEventListener('mouseenter', () => {
+          console.log('Mouse entered');
+        });
+        refs.miniMap.addEventListener('mouseleave', () => {
+          console.log('Mouse left');
+        });
         setView(currentView);
         formatOnMount() && setCode(await formatter()(code()));
         defaultTheme && setTheme(defaultTheme);
+        const end = performance.now();
+        console.log(`Execution time: ${end - start} milliseconds`);
       }
     };
     onCleanup(() => {
@@ -141,7 +170,6 @@ export const Editor = ({
   createShortcut(
     ['Alt', 'Shift', 'F'],
     async () => {
-      console.log('foramt', formmaterName());
       const formatted = await formatter()(code());
       setCode(formatted);
     },
@@ -150,7 +178,6 @@ export const Editor = ({
   createShortcut(
     ['Alt', 'Shift', 'Ï'],
     async () => {
-      console.log('alt shift f', editorView());
       const formatted = await formatter()(code());
       setCode(formatted);
     },
@@ -165,8 +192,8 @@ export const Editor = ({
 
   return (
     <>
-      <div id="editor" ref={setEditor} />
-      <div ref={setMiniMap} />
+      <div id="editor" ref={refs.editor} />
+      <div ref={refs.miniMap} />
     </>
   );
 };

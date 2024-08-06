@@ -9,7 +9,6 @@ import { createWorkerStorage } from './workerStorage'
 
 import { createWorker } from '@valtown/codemirror-ts/worker'
 import * as Comlink from 'comlink'
-console.log('worker.ts')
 
 const compilerOptions: ts.CompilerOptions = {
 	target: ts.ScriptTarget.ES2016,
@@ -30,7 +29,6 @@ const fsMap = await createDefaultMapFromCDN(
 	undefined,
 	storage
 )
-console.log('fsMap', fsMap)
 const system = createSystem(fsMap)
 const worker = createWorker(async () =>
 	createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)

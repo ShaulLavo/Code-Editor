@@ -10,7 +10,7 @@ import {
   themeSettings
 } from './themeStore';
 import { Formmater, formmaterName, setFormmater } from './format';
-import { editor, setEditor, miniMap, setMiniMap, setCode, code, setShowLineNumber, showLineNumber } from './editorStore';
+import { refs, setCode, code, setShowLineNumber, showLineNumber } from './editorStore';
 
 
 function capitalizeFirstLetter(word: string): string {
@@ -72,7 +72,7 @@ const App: Component = () => {
           style={{
             color: currentColor()
           }}
-          onMouseDown={() => miniMap().style.display = miniMap().style.display === 'none' ? 'block' : 'none'}
+          onMouseDown={() => refs.miniMap.style.display = refs.miniMap.style.display === 'none' ? 'block' : 'none'}
         >
           Toggle MiniMap
         </button>

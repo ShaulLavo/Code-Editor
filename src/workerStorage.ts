@@ -12,12 +12,16 @@ declare global {
 	}
 }
 
-const { encode } = new TextEncoder()
-const { decode } = new TextDecoder()
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
+
+async function getFileHandle(fileName: string): Promise<FileSystemFileHandle> {
+	const root = await navigator.storage.getDirectory()
+	return await root.getFileHandle(`${fileName}.json`, { create: true })
+}
 
 async function createWorkerStorage(fileName: string = 'store') {
-	const root = await navigator.storage.getDirectory()
-	const fileHandle = await root.getFileHandle(fileName, { create: true })
+	const fileHandle = await getFileHandle(fileName)
 	const accessHandle = await fileHandle.createSyncAccessHandle()
 
 	const readStore = (): { [key: string]: string } => {
@@ -26,7 +30,7 @@ async function createWorkerStorage(fileName: string = 'store') {
 
 		const dataView = new DataView(new ArrayBuffer(size))
 		accessHandle.read(dataView, { at: 0 })
-		const fileContent = decode(dataView)
+		const fileContent = textDecoder.decode(dataView)
 		try {
 			return JSON.parse(fileContent)
 		} catch {
@@ -35,7 +39,7 @@ async function createWorkerStorage(fileName: string = 'store') {
 	}
 
 	const writeStore = (store: { [key: string]: string }): void => {
-		const content = encode(JSON.stringify(store, null, 2))
+		const content = textEncoder.encode(JSON.stringify(store, null, 2))
 		accessHandle.truncate(0)
 		accessHandle.write(content, { at: 0 })
 		accessHandle.flush()
@@ -78,7 +82,6 @@ async function createWorkerStorage(fileName: string = 'store') {
 	} satisfies Storage
 
 	self.addEventListener('unload', () => {
-		console.log('unload')
 		accessHandle.close()
 	})
 
