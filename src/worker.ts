@@ -18,21 +18,21 @@ const compilerOptions: ts.CompilerOptions = {
 	noEmit: true,
 	isolatedModules: true
 }
-
-const storage = (await createWorkerStorage().catch(console.error)) ?? undefined
-const fsMap = await createDefaultMapFromCDN(
-	compilerOptions,
-	ts.version,
-	true,
-	ts,
-	lzstring,
-	undefined,
-	storage
-)
-const system = createSystem(fsMap)
-const worker = createWorker(async () =>
-	createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
-)
+const worker = createWorker(async () => {
+	const storage =
+		(await createWorkerStorage().catch(console.error)) ?? undefined
+	const fsMap = await createDefaultMapFromCDN(
+		compilerOptions,
+		ts.version,
+		true,
+		ts,
+		lzstring,
+		undefined,
+		storage
+	)
+	const system = createSystem(fsMap)
+	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
+})
 Comlink.expose({ ...worker, close: storage?.close })
 
 self.postMessage('ready')
