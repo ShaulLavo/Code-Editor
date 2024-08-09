@@ -51,7 +51,6 @@ import {
 } from '@codemirror/view';
 import { defaultKeymap } from './utils/keymap';
 import { currentTheme } from './themeStore';
-import * as themes from '@uiw/codemirror-themes-all';
 export interface EditorProps {
   code: Accessor<string>;
   setCode: Setter<string>;
