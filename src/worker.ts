@@ -18,9 +18,9 @@ const compilerOptions: ts.CompilerOptions = {
 	noEmit: true,
 	isolatedModules: true
 }
+let storage: Awaited<ReturnType<typeof createWorkerStorage>>
 const worker = createWorker(async () => {
-	const storage =
-		(await createWorkerStorage().catch(console.error)) ?? undefined
+	storage = await createWorkerStorage()
 	const fsMap = await createDefaultMapFromCDN(
 		compilerOptions,
 		ts.version,
@@ -33,6 +33,6 @@ const worker = createWorker(async () => {
 	const system = createSystem(fsMap)
 	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
 })
-Comlink.expose({ ...worker, close: storage?.close })
+Comlink.expose({ ...worker })
 
 self.postMessage('ready')
