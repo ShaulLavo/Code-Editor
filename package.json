@@ -2,7 +2,7 @@
   "name": "solidjs-editor",
   "version": "0.0.3",
   "description": "",
-  "main": "./src/main.ts",
+  "main": "./src/index.tsx",
   "scripts": {
     "start": "vite",
     "dev": "vite",
