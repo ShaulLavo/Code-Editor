@@ -30,6 +30,8 @@
     "@codemirror/search": "^6.5.6",
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.28.6",
+    "@floating-ui/core": "^1.6.7",
+    "@floating-ui/dom": "^1.6.10",
     "@lezer/highlight": "^1.2.0",
     "@lezer/javascript": "^1.4.17",
     "@replit/codemirror-minimap": "^0.5.2",
@@ -41,12 +43,14 @@
     "@uiw/codemirror-themes": "^4.23.0",
     "@uiw/codemirror-themes-all": "^4.23.0",
     "@valtown/codemirror-ts": "^2.1.2",
+    "clsx": "^2.1.1",
     "comlink": "^4.4.1",
     "js-beautify": "^1.15.1",
     "lz-string": "^1.5.0",
     "prettier": "^3.3.3",
     "solid-js": "^1.8.18",
     "solid-transition-group": "^0.2.3",
+    "tailwind-merge": "^2.5.2",
     "thememirror": "^2.0.1"
   }
 }
