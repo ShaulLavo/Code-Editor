@@ -46,6 +46,7 @@
     "lz-string": "^1.5.0",
     "prettier": "^3.3.3",
     "solid-js": "^1.8.18",
+    "solid-transition-group": "^0.2.3",
     "thememirror": "^2.0.1"
   }
 }

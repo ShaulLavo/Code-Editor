@@ -1,4 +1,4 @@
-// import { makePersisted } from '@solid-primitives/storage'
+import { makePersisted } from '@solid-primitives/storage'
 // import {
 // 	duotoneDark,
 // 	duotoneLight,
@@ -27,7 +27,7 @@ const themeSettings = {
 	// 	background: '#24283b',
 	// 	color: '#2ac3de'
 	// },
-	defaultLight: { theme: [], background: 'white', color: 'black' },
+	// defaultLight: { theme: [], background: 'white', color: 'black' },
 	poimandres: {
 		theme: poimandres,
 		background: baseColors.bg,
@@ -39,8 +39,8 @@ type ThemeKey = keyof typeof themeSettings
 type ThemeSetting = (typeof themeSettings)[ThemeKey]
 
 const [currentThemeName, setTheme] = createSignal<ThemeKey>('poimandres')
-
-const currentThemeSettings = () => themeSettings[currentThemeName()]
+const currentThemeSettings = () =>
+	themeSettings[currentThemeName() ?? 'poimandres']
 const currentTheme = () => currentThemeSettings().theme
 const currentColor = () => currentThemeSettings().color
 const currentBackground = () => currentThemeSettings().background

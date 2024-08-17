@@ -9,8 +9,7 @@ import { createWorkerStorage } from './workerStorage'
 
 import { createWorker } from '@valtown/codemirror-ts/worker'
 import * as Comlink from 'comlink'
-
-const compilerOptions: ts.CompilerOptions = {
+export const compilerOptions: ts.CompilerOptions = {
 	target: ts.ScriptTarget.ES2016,
 	esModuleInterop: true,
 	strict: true,
@@ -33,6 +32,5 @@ const worker = createWorker(async () => {
 	const system = createSystem(fsMap)
 	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
 })
-Comlink.expose({ ...worker })
-
+Comlink.expose(worker)
 self.postMessage('ready')

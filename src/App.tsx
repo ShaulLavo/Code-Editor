@@ -11,6 +11,8 @@ import {
 } from './themeStore';
 import { Formmater, formmaterName, setFormmater } from './format';
 import { refs, setCode, code, setShowLineNumber, showLineNumber } from './editorStore';
+import ts from 'typescript';
+import { compilerOptions } from './worker';
 
 
 function capitalizeFirstLetter(word: string): string {
@@ -75,6 +77,15 @@ const App: Component = () => {
           onMouseDown={() => refs.miniMap.style.display = refs.miniMap.style.display === 'none' ? 'block' : 'none'}
         >
           Toggle MiniMap
+        </button>
+        {' '}|{' '}
+        <button
+          style={{
+            color: currentColor()
+          }}
+          onMouseDown={() => setCode(ts.transpileModule(code(), { compilerOptions }).outputText)}
+        >
+          Transpile
         </button>
       </div>
 
