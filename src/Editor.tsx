@@ -94,7 +94,15 @@ export const Editor = ({
 			parent: refs.editor,
 			dispatch: (transaction, view) => {
 				view.update([transaction])
-				setCode(view.state.doc.toString())
+				const { state } = view
+				const { selection, doc } = state
+				const { main } = selection
+
+				const line = doc.lineAt(main.head).number
+				const column = main.head - doc.lineAt(main.head).from
+
+				console.log(`line: ${line}, column: ${column}`)
+				setCode(state.doc.toString())
 			}
 		})
 		view.setState(editorState)

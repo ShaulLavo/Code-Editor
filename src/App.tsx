@@ -1,6 +1,9 @@
-import { For, createSignal, type Component } from 'solid-js'
+import { For, type Component } from 'solid-js'
+import ts from 'typescript'
 import { Editor } from './Editor'
-import { all } from './constants/samples'
+import { StatusBar } from './StatusBar'
+import { code, setCode, setShowLineNumber, showLineNumber } from './editorStore'
+import { Formmater } from './format'
 import {
 	ThemeKey,
 	currentBackground,
@@ -9,28 +12,13 @@ import {
 	setTheme,
 	themeSettings
 } from './themeStore'
-import { Formmater, formmaterName, setFormmater } from './format'
-import {
-	refs,
-	setCode,
-	code,
-	setShowLineNumber,
-	showLineNumber
-} from './editorStore'
-import ts from 'typescript'
 import { compilerOptions } from './worker'
-import { StatusBar } from './StatusBar'
-import { createStatus } from './statusStore'
 
 function capitalizeFirstLetter(word: string): string {
 	return word.charAt(0).toUpperCase() + word.slice(1)
 }
 const App: Component = () => {
 	let hasTitle = false
-	const { update, remove } = createStatus({
-		title: 'appStatus',
-		status: 'COMPLETED'
-	})
 
 	return (
 		<main
@@ -88,7 +76,6 @@ const App: Component = () => {
 						color: currentColor()
 					}}
 					onMouseDown={() => {
-						update({ title: hasTitle ? '' : 'status', status: 'COMPLETED' })
 						hasTitle = !hasTitle
 					}}
 				>

@@ -1,35 +1,14 @@
-import {
-	For,
-	createEffect,
-	createSignal,
-	createUniqueId,
-	on,
-	onCleanup
-} from 'solid-js'
+import { For } from 'solid-js'
 import { currentBackground, currentColor } from './themeStore'
 
-import { createStore, produce } from 'solid-js/store'
 import { HoverCard } from './components/HoverCard'
-import { code } from './editorStore'
-import { createStatus, statuses } from './statusStore'
+import { statuses } from './statusStore'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
 }
 
 export const StatusBar = () => {
-	const status = createStatus({
-		title: code().slice(0, 10),
-		status: 'COMPLETED'
-	})
-	createEffect(
-		on(code, code => {
-			status.update({
-				title: code.slice(0, 10),
-				status: 'COMPLETED'
-			})
-		})
-	)
 	return (
 		<div
 			// onMouseOver={() => console.log('over')}
