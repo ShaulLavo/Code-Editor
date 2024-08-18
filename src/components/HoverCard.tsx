@@ -50,6 +50,7 @@ export const HoverCard = ({ trigger, caredContent }: HoverCardProps) => {
 				bottom: 'top',
 				left: 'right'
 			}[placement.split('-')[0]]
+
 			Object.assign(arrowRef.style, {
 				left: arrowX != null ? `${arrowX}px` : '',
 				top: arrowY != null ? `${arrowY}px` : '',
