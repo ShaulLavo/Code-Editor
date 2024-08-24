@@ -1,6 +1,7 @@
 import { For, Setter, batch, type Component } from 'solid-js'
 import { Node } from '../fileSystem/fileSystem.service'
 import { setCurrentPath } from '../stores/fsStore'
+import { isDark } from '~/stores/themeStore'
 interface EditorTabsProps {
 	fileMap: Map<string, string>
 	currentNode: () => Node | undefined
@@ -22,8 +23,10 @@ export const EditorTabs: Component<EditorTabsProps> = ({
 								setCurrentPath(file)
 							})
 						}}
-						class={`px-4 py-2 focus:outline-none ${
-							isSelected() ? 'bg-white  bg-opacity-50' : ''
+						class={`px-4 py-2 focus:outline-none text-sm ${
+							isSelected()
+								? `${isDark() ? 'bg-white' : 'bg-gray-500'} bg-opacity-20`
+								: ''
 						}`}
 						data-value={file}
 					>

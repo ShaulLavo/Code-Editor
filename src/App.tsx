@@ -40,7 +40,7 @@ import {
 import {
 	currentPath,
 	loadTabData,
-	saveTabData,
+	saveTabs,
 	setCurrentPath
 } from './stores/fsStore'
 import { currentBackground, currentColor } from './stores/themeStore'
@@ -67,7 +67,7 @@ const App: Component = () => {
 		if (fileMap.has(path)) return fileMap.get(path)
 		const file = (await fs.readFile(path)) as string
 		fileMap.set(path, file)
-		saveTabData(fileMap)
+		saveTabs(fileMap.keys())
 		return file
 	})
 
@@ -110,11 +110,11 @@ const App: Component = () => {
 				}}
 				orientation="horizontal"
 			>
-				<ResizablePanel initialSize={0.3}>
+				<ResizablePanel initialSize={0.25}>
 					<FileSystem traversedNodes={traversedNodes} />
 				</ResizablePanel>
 				<ResizableHandle class={' bg-gray-600'} />
-				<ResizablePanel initialSize={0.7}>
+				<ResizablePanel initialSize={0.75}>
 					<div>
 						<EditorTabs
 							currentNode={currentNode}

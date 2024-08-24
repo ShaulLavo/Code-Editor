@@ -11,6 +11,7 @@ import {
 } from 'solid-js'
 import { Node, isFile, isFolder } from './fileSystem.service'
 import { currentPath, setCurrentPath } from '~/stores/fsStore'
+import { currentColor, isDark } from '~/stores/themeStore'
 
 interface FilesystemItemProps {
 	node: Node
@@ -42,9 +43,9 @@ export function FilesystemItem({ node, fullPath = '' }: FilesystemItemProps) {
 				<span
 					class={`flex items-center gap-1.5 py-1 px-2 rounded ${
 						currentPath() === thisPath
-							? 'bg-white  bg-opacity-50 font-bold text-xs'
+							? `${isDark() ? 'bg-white' : 'bg-gray-500'} bg-opacity-20 font-bold text-xs`
 							: 'text-gray-600 text-xs'
-					} hover:bg-white  hover:bg-opacity-50  hover:font-bold cursor-pointer`}
+					} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
 					onClick={handleClick}
 				>
 					{isFolder(node) && node.nodes.length > 0 && (
@@ -57,12 +58,12 @@ export function FilesystemItem({ node, fullPath = '' }: FilesystemItemProps) {
 
 					{isFolder(node) ? (
 						<VsFolder
-							class={`size-6 ${
-								node.nodes.length === 0 ? 'ml-[22px]' : 'text-sky-500'
+							class={`size-4 ${
+								node.nodes.length === 0 ? 'ml-[22px]' : currentColor()
 							}`}
 						/>
 					) : (
-						<VsFile class={`ml-[22px] size-6`} />
+						<VsFile class={`ml-[22px] size-4`} />
 					)}
 					{node.name}
 				</span>

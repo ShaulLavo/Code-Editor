@@ -26,14 +26,14 @@ function reviver(key: any, value: any) {
 	}
 	return value
 }
-export const saveTabData = async (fileMap: ReactiveMap<string, string>) => {
-	const data = JSON.stringify(fileMap, replacer)
-	await fs.writeFile('tabsData', data)
+export const saveTabs = async (tabIter: IterableIterator<string>) => {
+	const tabs = Array.from(tabIter)
+	await fs.writeFile('tabs', JSON.stringify(tabs))
 }
 export const loadTabData = async (fileMap: ReactiveMap<string, string>) => {
-	const data = (await fs.readFile('tabsData')) as string
-	const parsed = JSON.parse(data, reviver)
-	for (const [key, value] of parsed) {
-		fileMap.set(key, value)
+	const tabs = JSON.parse((await fs.readFile('tabs')) as string)
+	for (const tab of tabs) {
+		console.log('loading tab', tab)
+		fileMap.set(tab, (await fs.readFile(tab)) as string)
 	}
 }
