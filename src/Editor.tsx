@@ -3,7 +3,12 @@ import { history } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
 import { bracketMatching, indentOnInput } from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
-import { EditorState, Extension, StateEffect } from '@codemirror/state'
+import {
+	Compartment,
+	EditorState,
+	Extension,
+	StateEffect
+} from '@codemirror/state'
 import {
 	EditorView,
 	drawSelection,
@@ -35,30 +40,39 @@ import {
 	onMount
 } from 'solid-js'
 import { createEditorControlledValue } from './hooks/controlledValue'
-import { createCompartmentExtension } from './hooks/createCompartmentExtension'
 import {
-	refs,
+	createCompartmentExtension,
+	useExtension
+} from './hooks/createCompartmentExtension'
+import {
+	editorRef,
+	setEditorRef,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
 	showLineNumber
-} from './editorStore'
+} from './stores/editorStore'
 import { formatter } from './format'
-import { ThemeKey, currentTheme, setTheme } from './themeStore'
+import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
 import { defaultKeymap } from './utils/keymap'
 import { useShortcuts } from './hooks/useShortcuts'
 
 import { makeEventListener } from '@solid-primitives/event-listener'
+import ts from 'typescript'
+import { Remote } from 'comlink'
+import { currentExtension, currentPath } from './stores/fsStore'
 
 export interface EditorProps {
-	code: Accessor<string> | Resource<string>
+	code: Accessor<string> | Resource<string | undefined>
 	setCode: Setter<string | undefined>
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 }
-interface Worker extends WorkerShape {
-	close: () => void
-}
+
+type Worker = WorkerShape &
+	Remote<ts.System> & {
+		close: () => void
+	}
 
 export const Editor = ({
 	code,
@@ -68,9 +82,9 @@ export const Editor = ({
 }: EditorProps) => {
 	useShortcuts(code, setCode)
 	const [editorView, setView] = createSignal<EditorView>(null!)
-
+	const [worker, setWorker] = createSignal<Worker>(null!)
 	const start = performance.now()
-
+	let miniMapShown = false
 	const baseExtensions = [
 		highlightSpecialChars(),
 		history(),
@@ -85,15 +99,7 @@ export const Editor = ({
 		highlightSelectionMatches(),
 		EditorView.lineWrapping,
 		keymap.of(defaultKeymap),
-		javascript({ jsx: true, typescript: true }),
-		currentTheme(),
-		showMinimap.compute([], () => {
-			return {
-				create: () => ({ dom: refs.miniMap }),
-				showOverlay: 'mouse-over',
-				displayText: 'blocks'
-			}
-		})
+		javascript({ jsx: true, typescript: true })
 	]
 
 	const setupEditor = () => {
@@ -103,7 +109,7 @@ export const Editor = ({
 		})
 
 		const view = new EditorView({
-			parent: refs.editor,
+			parent: editorRef(),
 			dispatch: (transaction, view) => {
 				view.update([transaction])
 				batch(() => {
@@ -122,7 +128,7 @@ export const Editor = ({
 		})
 		view.setState(editorState)
 		setView(view)
-		autoHide(refs.miniMap)
+		// autoHide(refs.miniMap)
 		console.log(
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
@@ -145,16 +151,7 @@ export const Editor = ({
 		innerWorker.onmessage = async e => {
 			if (e.data === 'ready') {
 				await worker.initialize()
-				view.dispatch({
-					effects: StateEffect.appendConfig.of(
-						[
-							tsFacetWorker.of({ worker, path: 'index.ts' }),
-							tsSyncWorker(),
-							tsLinterWorker(),
-							tsHoverWorker()
-						].concat(baseExtensions)
-					)
-				})
+				setWorker(() => worker)
 
 				console.log(
 					`time for TS worker to load: ${performance.now() - start} milliseconds`
@@ -163,8 +160,50 @@ export const Editor = ({
 		}
 	}
 	createExtention(currentTheme())
-	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
+
+	createEffect(() => {
+		if (editorView() === null || worker() === null) return
+		if (currentExtension() === 'ts' || currentExtension() === 'tsx') {
+			editorView().dispatch({
+				effects: StateEffect.reconfigure.of(
+					[
+						tsFacetWorker.of({ worker: worker(), path: currentPath() }),
+						tsSyncWorker(),
+						tsLinterWorker(),
+						tsHoverWorker()
+					].concat(baseExtensions)
+				)
+			})
+		} else {
+			editorView().dispatch({
+				effects: StateEffect.reconfigure.of(baseExtensions)
+			})
+		}
+		useExtension(
+			showMinimap.compute([], () => {
+				return {
+					create: () => {
+						const minimap = document.createElement('div')
+						// autoHide(minimap)
+						return { dom: minimap }
+					},
+					showOverlay: 'mouse-over',
+					displayText: 'blocks'
+				}
+			}),
+			editorView
+		)
+
+		useExtension(showLineNumber?.() ? lineNumbers() : [], editorView)
+		useExtension(currentTheme(), editorView)
+	})
 	createEditorControlledValue(editorView, code)
+	// createEffect(async () => {
+	// 	if (worker() === null) return
+	// 	if (code() === undefined || code() === '') return
+	// 	// console.log('file', await worker().getLints({ path: currentPath() }))
+	// 	// console.log('file', await worker().directoryExists(''))
+	// })
 
 	const formatCode = async () => {
 		const formatted = await formatter()(code()!)
@@ -172,6 +211,7 @@ export const Editor = ({
 	}
 
 	const autoHide = (el: HTMLElement) => {
+		el.classList.add('transition-display')
 		let isVisible = false
 		let rect = el.getBoundingClientRect()
 		const showOnHover = (event: MouseEvent) => {
@@ -205,8 +245,7 @@ export const Editor = ({
 
 	return (
 		<>
-			<div id="editor" class="pt-10 " ref={refs.editor} />
-			<div id="minimap" class="transition-display -z-50" ref={refs.miniMap} />
+			<div id="editor" class="w-full h-screen" ref={ref => setEditorRef(ref)} />
 		</>
 	)
 }

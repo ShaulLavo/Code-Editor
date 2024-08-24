@@ -1,9 +1,13 @@
 import { Accessor, For, createSignal } from 'solid-js'
-import { currentBackground, currentColor } from './themeStore'
+import { currentBackground, currentColor } from './stores/themeStore'
 import { createContext } from 'solid-js'
 
 import { HoverCard } from './components/HoverCard'
-import { currentColumn, currentLine, currentSelection } from './editorStore'
+import {
+	currentColumn,
+	currentLine,
+	currentSelection
+} from './stores/editorStore'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>

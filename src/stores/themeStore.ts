@@ -9,7 +9,7 @@ import { makePersisted } from '@solid-primitives/storage'
 // 	xcodeLight
 // } from '@uiw/codemirror-themes-all'
 import { createSignal } from 'solid-js'
-import { baseColors, poimandres } from './constants/themes/poimandres'
+import { baseColors, poimandres } from '../constants/themes/poimandres'
 
 const themeSettings = {
 	// xcodeDark: { theme: xcodeDark, background: '#292A30', color: '#DABAFF' },
@@ -38,7 +38,10 @@ const themeSettings = {
 type ThemeKey = keyof typeof themeSettings
 type ThemeSetting = (typeof themeSettings)[ThemeKey]
 
-const [currentThemeName, setTheme] = createSignal<ThemeKey>('poimandres')
+const [currentThemeName, setTheme] = makePersisted(
+	createSignal<ThemeKey>('poimandres'),
+	{ name: 'theme' }
+)
 const currentThemeSettings = () =>
 	themeSettings[currentThemeName() ?? 'poimandres']
 const currentTheme = () => currentThemeSettings().theme

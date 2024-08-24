@@ -8,7 +8,7 @@ import { EditorView } from '@codemirror/view'
  */
 export function createEditorControlledValue(
 	view: Accessor<EditorView | undefined>,
-	code: Accessor<string> | Resource<string>
+	code: Accessor<string> | Resource<string | undefined>
 ): void {
 	const memoizedCode = createMemo(code)
 
@@ -18,9 +18,9 @@ export function createEditorControlledValue(
 			createEffect(
 				on(memoizedCode, code => {
 					const localValue = view?.state.doc.toString()
-					if (localValue.length === code?.length) {
-						return
-					}
+					// if (localValue.length === code?.length) {
+					// 	return
+					// }
 					view.dispatch({
 						changes: {
 							from: 0,

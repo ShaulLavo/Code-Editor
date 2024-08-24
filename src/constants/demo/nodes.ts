@@ -1,4 +1,5 @@
-import type { Node } from '../App'
+import type { Node } from '../../fileSystem/fileSystem.service'
+import { all } from '../samples'
 
 export const demoNodes: Node[] = [
 	{
@@ -191,6 +192,8 @@ export const nextApp: Node[] = [
 			{
 				name: 'pages',
 				nodes: [
+					{ name: 'main.tsx', content: all },
+
 					{
 						name: 'index.tsx',
 						content:
