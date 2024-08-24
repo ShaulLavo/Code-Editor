@@ -8,6 +8,7 @@ import { createSignal } from 'solid-js'
 export const Formmater = {
 	async prettier(code: string) {
 		try {
+			if (!code) return code
 			return await prettier(code, {
 				parser: 'typescript',
 				plugins: [prettierPluginTypescript, prettierPluginEstree],

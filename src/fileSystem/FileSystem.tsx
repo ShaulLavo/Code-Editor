@@ -2,14 +2,17 @@ import fs from 'indexeddb-fs'
 import {
 	For,
 	Suspense,
+	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
 	type Component
 } from 'solid-js'
 
-import { demoNodes, nextApp } from '../../constants/demo/nodes'
+import { demoNodes, nextApp } from '../constants/demo/nodes'
 import { FilesystemItem } from './FilesystemItem'
+import { Editor } from '../Editor'
+import { code, setCode } from '../editorStore'
 
 type File = {
 	name: string
@@ -115,7 +118,7 @@ export const FileSystem: Component = () => {
 	const [currentPath, setCurrentPath] = createSignal('')
 	const filePath = () => (isFile(currentNode()) ? currentPath() : undefined)
 
-	const [content] = createResource(
+	const [content, { mutate }] = createResource(
 		filePath,
 		async path => fs.readFile(path) as Promise<string>
 	)
@@ -169,8 +172,10 @@ export const FileSystem: Component = () => {
 						</For>
 					</ul>
 				</Suspense>
+
 				<Suspense fallback={'loading...'}>
-					<code>{content()}</code>
+					<Editor code={content} setCode={mutate} />
+					{/* <code>{content()}</code> */}
 				</Suspense>
 			</div>
 		</div>

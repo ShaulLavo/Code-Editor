@@ -1,20 +1,44 @@
-import { JSX, Show, createEffect, createSignal, on, onMount } from 'solid-js'
-import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom'
 import {
-	hideTimeout,
-	setHideTimeout,
-	setShowTimeout,
-	setTimeoutDelay,
-	showTimeout,
-	timeoutDelay
-} from '../statusStore'
+	Context,
+	JSX,
+	Show,
+	createEffect,
+	createSignal,
+	on,
+	onMount,
+	useContext
+} from 'solid-js'
+import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom'
+// import { HoverCardContext, StatusBarCtx } from '../StatusBar'
+
+useContext
 
 interface HoverCardProps {
 	trigger: JSX.Element
 	caredContent: JSX.Element
+	hasArrow?: boolean
+	gap?: number
+	// Context?: Context<HoverCardContext>
 }
-export const HoverCard = ({ trigger, caredContent }: HoverCardProps) => {
+export const HoverCard = ({
+	trigger,
+	caredContent,
+	hasArrow,
+	gap
+}: HoverCardProps) => {
+	// const {
+	// 	timeoutDelay,
+	// 	setTimeoutDelay,
+	// 	hideTimeout,
+	// 	setHideTimeout,
+	// 	showTimeout,
+	// 	setShowTimeout
+	// } = useContext<HoverCardContext>(Context)
 	const [isHovered, setHovered] = createSignal(false)
+
+	const [timeoutDelay, setTimeoutDelay] = createSignal(300)
+	const [hideTimeout, setHideTimeout] = createSignal<NodeJS.Timeout>()
+	const [showTimeout, setShowTimeout] = createSignal<NodeJS.Timeout>()
 
 	const [tooltip, setToolTip] = createSignal<HTMLDivElement>(null!)
 	let arrowRef: HTMLDivElement = null!
@@ -29,7 +53,7 @@ export const HoverCard = ({ trigger, caredContent }: HoverCardProps) => {
 				{
 					placement: 'top',
 					middleware: [
-						offset(6),
+						offset(gap),
 						flip(),
 						shift({ padding: 5 }),
 						arrow({ element: arrowRef })
@@ -42,6 +66,7 @@ export const HoverCard = ({ trigger, caredContent }: HoverCardProps) => {
 				top: `${y}px`
 			})
 
+			if (!hasArrow) return
 			//@ts-ignore
 			const { x: arrowX, y: arrowY } = middlewareData.arrow
 			const staticSide = {
@@ -96,12 +121,14 @@ export const HoverCard = ({ trigger, caredContent }: HoverCardProps) => {
 					onFocus={showTooltip}
 					onBlur={hideTooltip}
 					ref={setToolTip}
-					class='class="w-max absolute top-0 left-0 bg-gray-800 text-white font-bold p-1.5 rounded-md text-sm z-50'
+					class='class="w-max absolute top-0 left-0 bg-gray-800 text-white font-bold p-1.5 rounded-md  z-50 text-xs'
 				>
-					<div
-						ref={arrowRef}
-						class="absolute bg-gray-800 w-2 h-2 transform rotate-45"
-					/>
+					{hasArrow && (
+						<div
+							ref={arrowRef}
+							class="absolute bg-gray-800 w-2 h-2 transform rotate-45"
+						/>
+					)}
 
 					{caredContent}
 				</div>

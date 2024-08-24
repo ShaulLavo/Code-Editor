@@ -48,8 +48,8 @@ export function FilesystemItem({
 			<span
 				class={`flex items-center gap-1.5 py-1 px-2 rounded ${
 					currentPath() === thisPath
-						? 'bg-blue-100 text-black font-bold'
-						: 'text-gray-600'
+						? 'bg-blue-100 text-black font-bold text-xs'
+						: 'text-gray-600 text-xs'
 				} hover:bg-blue-100 hover:text-black hover:font-bold cursor-pointer`}
 				onClick={handleClick}
 			>
@@ -74,7 +74,7 @@ export function FilesystemItem({
 			</span>
 			<Show when={isOpen()}>
 				<ul class="pl-6">
-					<For each={isFolder(node) ? node.nodes : undefined}>
+					<For each={isFolder(node) && node.nodes}>
 						{childNode => (
 							<FilesystemItem
 								node={childNode}

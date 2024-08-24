@@ -1,15 +1,15 @@
 import { createShortcut, useKeyDownList } from '@solid-primitives/keyboard'
-import { Accessor, Setter, createEffect } from 'solid-js'
+import { Accessor, Resource, Setter, createEffect } from 'solid-js'
 import { formatter } from '../format'
 
 export const useShortcuts = (
-	code: Accessor<string>,
-	setCode: Setter<string>
+	code: Accessor<string> | Resource<string>,
+	setCode: Setter<string | undefined>
 ) => {
 	createShortcut(
 		['Alt', 'Shift', 'F'],
 		async () => {
-			const formatted = await formatter()(code())
+			const formatted = await formatter()(code()!)
 			setCode(formatted)
 		},
 		{ preventDefault: true }
@@ -17,7 +17,7 @@ export const useShortcuts = (
 	createShortcut(
 		['Alt', 'Shift', 'Ï'],
 		async () => {
-			const formatted = await formatter()(code())
+			const formatted = await formatter()(code()!)
 			setCode(formatted)
 		},
 		{ preventDefault: true }

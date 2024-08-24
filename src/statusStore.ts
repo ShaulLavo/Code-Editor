@@ -30,10 +30,6 @@ const updateStatus = (status: Status) => {
 	setStatuses(_statuses.map(s => (s.id === status.id ? status : s)))
 }
 
-export const [timeoutDelay, setTimeoutDelay] = createSignal(300)
-export const [hideTimeout, setHideTimeout] = createSignal<NodeJS.Timeout>()
-export const [showTimeout, setShowTimeout] = createSignal<NodeJS.Timeout>()
-
 export const createStatus = (status: StatusBase) => {
 	const newStatus = { ...status, id: createUniqueId() }
 	pushStatus(newStatus)

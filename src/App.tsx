@@ -1,3 +1,12 @@
+//TODO: connect FS to editor )
+//TODO: do not reinstentiate worker on editor change
+//TODO: use OPFS as FS (maybe make the same wrapper for both idxDB and OPFS)
+//TODO: add a tetminal connect it to FS with basic commands (ls, cd, mkdir, touch, rm, cat, echo, clear, pwd, help)
+//TODO: add npm https://github.com/naruaway/npm-in-browser
+//TODO: add bundler in browser ??
+//TODO: run the code (quickjs? but polyfill the enterie DOM, just eval?)
+//TODO: ??
+//TODO: proft
 import { For, type Component } from 'solid-js'
 import ts from 'typescript'
 import { Editor } from './Editor'
@@ -13,7 +22,7 @@ import {
 	themeSettings
 } from './themeStore'
 import { compilerOptions } from './worker'
-
+import { FileSystem } from './fileSystem/FileSystem'
 function capitalizeFirstLetter(word: string): string {
 	return word.charAt(0).toUpperCase() + word.slice(1)
 }
@@ -93,7 +102,7 @@ const App: Component = () => {
 					Transpile
 				</button>
 			</div>
-			<Editor code={code} setCode={setCode} />
+			<FileSystem />
 			<StatusBar />
 		</main>
 	)
