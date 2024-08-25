@@ -6,8 +6,11 @@ import { HoverCard } from './components/HoverCard'
 import {
 	currentColumn,
 	currentLine,
-	currentSelection
+	currentSelection,
+	isTs,
+	isTsLoading
 } from './stores/editorStore'
+import { Spinner, SpinnerType } from 'solid-spinner'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -39,7 +42,7 @@ export const DefaultDescription = (props: { description: string }) => {
 interface Status {
 	title: string
 	description?: string
-	status: 'PENDING' | 'COMPLETED' | 'CANCELED'
+	isLoading: boolean
 }
 
 export const StatusBar = () => {
@@ -47,12 +50,18 @@ export const StatusBar = () => {
 		currentSelection().length > 0
 			? `(${currentSelection().length} selected)`
 			: ''
+
 	const statuses = () =>
 		[
 			{
 				title: `Ln ${currentLine()},Col ${currentColumn()} ${selcetionLength()}`,
 				description: 'Go to Line/Column',
-				status: 'COMPLETED'
+				isLoading: false
+			},
+			{
+				title: `${isTs() ? 'TypeScript' : ''}`,
+				// description: 'Go to Line/Column',
+				isLoading: isTs() && isTsLoading()
 			}
 		] satisfies Status[]
 
@@ -65,15 +74,26 @@ export const StatusBar = () => {
 		>
 			<ul class="flex flex-1 justify-end px-4 text-xs">
 				<For each={statuses()}>
-					{event => (
+					{status => (
 						<li class="pr-1" style={{ color: currentColor() }}>
-							<HoverCard
-								trigger={<span>{event.title}</span>}
-								caredContent={event.description}
-								hasArrow
-								gap={4}
-								// Context={StatusBarCtx}
-							/>
+							{status.isLoading ? (
+								<Spinner
+									type={SpinnerType.tailSpin}
+									width={12}
+									height={12}
+									color={currentColor()}
+								/>
+							) : status.description ? (
+								<HoverCard
+									trigger={<span>{status.title}</span>}
+									caredContent={status.description}
+									hasArrow
+									gap={4}
+									// Context={StatusBarCtx}
+								/>
+							) : (
+								<span>{status.title}</span>
+							)}
 						</li>
 					)}
 				</For>

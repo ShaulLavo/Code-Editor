@@ -35,6 +35,5 @@ const worker = createWorker(async () => {
 	// Comlink.expose(system)
 	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
 })
-console.log(typeof system)
 Comlink.expose({ ...worker, ...system })
 self.postMessage('ready')

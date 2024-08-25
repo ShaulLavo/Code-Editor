@@ -1,4 +1,4 @@
-import fs from 'indexeddb-fs'
+import { fs } from '~/stores/fsStore'
 
 type File = {
 	name: string
@@ -18,18 +18,17 @@ export function isFolder(node: Node): node is Folder {
 	return (node as Folder)?.nodes !== undefined
 }
 export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
-	const dirents = await fs.readDirectory(dirPath)
+	let dirents = await fs.readDirectory(dirPath)
 
 	const directoryPromises = dirents.directories.map(async dir => {
 		const fullPath = `${dirPath}/${dir.name}`
 		const children = await getFileSystemStructure(fullPath)
-		return { name: dir.name, nodes: children }
+		return { name: restoreFilePath(dir.name), nodes: children }
 	})
 
 	const filePromises = dirents.files.map(async file => {
 		return {
-			name: file.name
-			// content: typeof content === 'string' ? content : ''
+			name: restoreFilePath(file.name)
 		}
 	})
 
@@ -38,13 +37,21 @@ export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
 	return nodes
 }
 
+export function sanitizeFilePath(path: string): string {
+	return path.replace(/\[/g, '__LSB__').replace(/\]/g, '__RSB__')
+}
+
+export function restoreFilePath(path: string): string {
+	return path.replace(/__LSB__/g, '[').replace(/__RSB__/g, ']')
+}
+
 export async function createFileSystemStructure(
 	nodes: Node[],
 	basePath = ''
 ): Promise<void> {
 	let start = performance.now()
 	for (const node of nodes) {
-		const currentPath = basePath + '/' + node.name
+		const currentPath = sanitizeFilePath(basePath + '/' + node.name)
 		if (isFolder(node)) {
 			try {
 				await fs.createDirectory(currentPath)
@@ -55,7 +62,6 @@ export async function createFileSystemStructure(
 		} else {
 			try {
 				const file = await fs.writeFile(currentPath, node.content ?? '')
-				console.log('file', file)
 			} catch (err) {
 				console.error(`Error creating file ${currentPath}:`, err)
 			}
@@ -65,7 +71,7 @@ export async function createFileSystemStructure(
 }
 
 export async function deleteAll(directoryPath: string): Promise<void> {
-	const dirents = await fs.readDirectory(directoryPath)
+	const dirents = await fs.readDirectory(sanitizeFilePath(directoryPath))
 
 	for (const dirent of dirents.directories) {
 		await fs.removeDirectory(directoryPath + '/' + dirent.name)

@@ -29,7 +29,7 @@ const deafultConfig = {
 	}
 } satisfies Partial<Record<BuiltInParserName, Options>>
 
-const extensionMap = {
+export const extensionMap = {
 	ts: 'typescript',
 	tsx: 'typescript',
 	js: 'typescript',
@@ -38,10 +38,8 @@ const extensionMap = {
 } as const
 
 const getConfigFromExt = (extension?: string) => {
-	console.log(extension)
 	const parser =
 		extensionMap[extension as keyof typeof extensionMap] ?? 'typescript'
-	console.log({ parser })
 	return deafultConfig[parser]
 }
 

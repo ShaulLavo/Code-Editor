@@ -33,7 +33,7 @@ import {
 	onCleanup,
 	onMount
 } from 'solid-js'
-import { formatter } from './format'
+import { extensionMap, formatter } from './format'
 import { createEditorControlledValue } from './hooks/controlledValue'
 import {
 	createCompartmentExtension,
@@ -43,11 +43,13 @@ import { useShortcuts } from './hooks/useShortcuts'
 import {
 	editorHight,
 	editorRef,
+	isTs,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
 	setEditorHight,
 	setEditorRef,
+	setIsTsLoading,
 	showLineNumber
 } from './stores/editorStore'
 import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
@@ -71,6 +73,57 @@ type Worker = WorkerShape &
 		close: () => void
 	}
 
+function createLoggingProxy<T extends {}>(target: T): T {
+	return new Proxy(target, {
+		get(target, prop, receiver) {
+			const originalMethod = Reflect.get(target, prop, receiver)
+			if (typeof originalMethod === 'function') {
+				return (...args: any[]) => {
+					console.log(`Calling ${String(prop)} with arguments:`, args)
+					const result = originalMethod.apply(target, args)
+					if (result instanceof Promise) {
+						return result.then(res => {
+							console.log(`Result from ${String(prop)}:`, res)
+							return res
+						})
+					} else {
+						console.log(`Result from ${String(prop)}:`, result)
+						return result
+					}
+				}
+			}
+			return originalMethod
+		}
+	})
+}
+function WorkerStatusProxy<T extends {}>(target: T): T {
+	return new Proxy(target, {
+		get(target, prop, receiver) {
+			const originalMethod = Reflect.get(target, prop, receiver)
+			if (typeof originalMethod === 'function') {
+				return (...args: any[]) => {
+					if (prop === 'initialize') {
+						setIsTsLoading(true)
+					}
+					const result = originalMethod.apply(target, args)
+					if (prop === 'getLints') {
+						if (result instanceof Promise) {
+							return result.then(res => {
+								setIsTsLoading(false)
+								return res
+							})
+						} else {
+							setIsTsLoading(false)
+						}
+					}
+					return result
+				}
+			}
+			return originalMethod
+		}
+	})
+}
+
 export const Editor = ({
 	code,
 	setCode,
@@ -82,7 +135,6 @@ export const Editor = ({
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const [worker, setWorker] = createSignal<Worker>(null!)
 	const start = performance.now()
-	let miniMapShown = false
 	const baseExtensions = [
 		highlightSpecialChars(),
 		history(),
@@ -110,6 +162,8 @@ export const Editor = ({
 			parent: editorRef(),
 			dispatch: (transaction, view) => {
 				view.update([transaction])
+
+				transaction.state.facet
 				batch(() => {
 					const { state } = view
 					const { selection, doc } = state
@@ -138,14 +192,11 @@ export const Editor = ({
 
 		return view
 	}
-	const createExtention = (
-		extention: Extension | Accessor<Extension | undefined>
-	) => createCompartmentExtension(extention, editorView)
 	const initWorker = async (view: EditorView) => {
 		const innerWorker = new Worker(new URL('./worker.ts', import.meta.url), {
 			type: 'module'
 		})
-		const worker = Comlink.wrap<Worker>(innerWorker)
+		const worker = WorkerStatusProxy(Comlink.wrap<Worker>(innerWorker))
 		onCleanup(() => worker.close())
 
 		innerWorker.onmessage = async e => {
@@ -159,11 +210,17 @@ export const Editor = ({
 			}
 		}
 	}
+
+	const createExtention = (
+		extention: Extension | Accessor<Extension | undefined>
+	) => createCompartmentExtension(extention, editorView)
+
 	createExtention(currentTheme())
+	createEditorControlledValue(editorView, code)
 
 	createEffect(() => {
 		if (editorView() === null || worker() === null) return
-		if (currentExtension() === 'ts' || currentExtension() === 'tsx') {
+		if (isTs()) {
 			editorView().dispatch({
 				effects: StateEffect.reconfigure.of(
 					[
@@ -197,8 +254,13 @@ export const Editor = ({
 		useExtension(showLineNumber?.() ? lineNumbers() : [], editorView)
 		useExtension(currentTheme(), editorView)
 	})
-	createEditorControlledValue(editorView, code)
 
+	createEffect(() => {
+		//@ts-ignore
+		if (extensionMap[currentExtension()] === 'typescript') {
+			setIsTsLoading(true)
+		}
+	})
 	const formatCode = async () => {
 		const formatted = await formatter()(code()!)
 		setCode(formatted)
@@ -235,7 +297,6 @@ export const Editor = ({
 	onMount(() => {
 		const view = setupEditor()
 		initWorker(view)
-		// editorRef().style.lineHeight = '1.5'
 	})
 
 	return (
@@ -243,7 +304,7 @@ export const Editor = ({
 			<div
 				id="editor"
 				class="w-full"
-				style={{ height: (size.height ?? editorHight()) + 'px' }}
+				style={{ height: (size.height ?? editorHight()) - 40 + 'px' }}
 				ref={ref => setEditorRef(ref)}
 			/>
 		</>

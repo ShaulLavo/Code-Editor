@@ -10,9 +10,6 @@
 //TODO: proft
 import { ReactiveMap } from '@solid-primitives/map'
 import { createElementSize } from '@solid-primitives/resize-observer'
-import { FitAddon } from '@xterm/addon-fit'
-import { Terminal } from '@xterm/xterm'
-import fs from 'indexeddb-fs'
 import {
 	createEffect,
 	createMemo,
@@ -28,6 +25,7 @@ import {
 } from '~/components/ui/resizable'
 import { Editor } from './Editor'
 import { StatusBar } from './StatusBar'
+import { Xterm } from './Xterm'
 import { EditorTabs } from './components/EditorTabs'
 import { Header } from './components/Header'
 import { FileSystem } from './fileSystem/FileSystem'
@@ -35,18 +33,20 @@ import {
 	findItem,
 	getFileSystemStructure,
 	isFile,
+	sanitizeFilePath,
 	traverseAndSetOpen
 } from './fileSystem/fileSystem.service'
 import {
 	currentPath,
+	fs,
 	loadTabData,
 	saveTabs,
 	setCurrentPath
 } from './stores/fsStore'
 import { currentBackground, currentColor, isDark } from './stores/themeStore'
 import './xterm.css'
-import { Xterm } from './Xterm'
 const App: Component = () => {
+	const fonts = document.fonts
 	const fileMap = new ReactiveMap<string, string>()
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
@@ -69,9 +69,13 @@ const App: Component = () => {
 	const [code, { mutate: setCode }] = createResource(filePath, async path => {
 		if (!path) return ''
 		if (fileMap.has(path)) return fileMap.get(path)
-		const file = (await fs.readFile(path)) as string
+		const file = (await fs.readFile(sanitizeFilePath(path))) as string
 		fileMap.set(path, file)
-		saveTabs(fileMap.keys())
+		try {
+			await saveTabs(fileMap.keys())
+		} catch (e) {
+			console.error(e)
+		}
 		return file
 	})
 
@@ -80,14 +84,13 @@ const App: Component = () => {
 			? []
 			: traverseAndSetOpen(nodes()!, currentPath().split('/').filter(Boolean))
 	)
-	createEffect(() => {
-		if (code() === undefined || code() === '') return
-		if (!currentPath()) return
-		fs.writeFile(currentPath(), code())
-	})
-	createEffect(() => {
-		console.log('height', editorSize.height)
-		console.log('width', editorSize.width)
+	// createEffect(() => {
+	// 	if (code() === undefined || code() === '') return
+	// 	if (!currentPath()) return
+	// 	fs.writeFile(sanitizeFilePath(currentPath()), code())
+	// })
+	onMount(async () => {
+		// console.log(fonts.values())
 	})
 	return (
 		<main
@@ -116,13 +119,13 @@ const App: Component = () => {
 				}}
 				orientation="horizontal"
 			>
-				<ResizablePanel class="overflow-hidden" initialSize={0.25}>
+				<ResizablePanel class="overflow-x-hidden" initialSize={0.25}>
 					<FileSystem traversedNodes={traversedNodes} />
 				</ResizablePanel>
 				<ResizableHandle class={isDark() ? ' bg-gray-800' : 'bg-gray-200'} />
-				<ResizablePanel class="overflow-hidden" initialSize={0.7}>
+				<ResizablePanel class="overflow-hidden" initialSize={0.75}>
 					<Resizable
-						class="w-full flex"
+						class="w-full"
 						style={{
 							'background-color': currentBackground(),
 							color: currentColor()
@@ -144,7 +147,7 @@ const App: Component = () => {
 							</div>
 						</ResizablePanel>
 						<ResizableHandle
-							class={isDark() ? ' bg-gray-800' : 'bg-gray-200'}
+							class={isDark() ? ' bg-gray-800' : 'bg-blue-200'}
 						/>
 						<ResizablePanel class="overflow-hidden" initialSize={0.3}>
 							<Xterm />

@@ -34,8 +34,8 @@ export const Header: Component<HeaderProps> = ({
 
 	return (
 		<div
-			ref={setHeaderRef}
 			class="bg-background-dark h-max absolute top-0 w-full p-2 z-50"
+			ref={setHeaderRef}
 			style={{
 				'background-color': currentBackground(),
 				color: currentColor()
@@ -100,9 +100,10 @@ export const Header: Component<HeaderProps> = ({
 				}
 			>
 				Transpile
-			</button>
+			</button>{' '}
+			|
 			<button
-				onClick={async () => {
+				onMouseDown={async () => {
 					await deleteAll('root')
 					refetch()
 				}}
@@ -111,7 +112,7 @@ export const Header: Component<HeaderProps> = ({
 			</button>{' '}
 			|
 			<button
-				onclick={async () => {
+				onMouseDown={async () => {
 					await createFileSystemStructure(nextApp)
 					refetch()
 				}}
@@ -120,7 +121,7 @@ export const Header: Component<HeaderProps> = ({
 			</button>{' '}
 			|
 			<button
-				onclick={async () => {
+				onMouseDown={async () => {
 					await createFileSystemStructure(demoNodes)
 					refetch()
 				}}

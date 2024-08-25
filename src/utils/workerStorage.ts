@@ -15,14 +15,21 @@ declare global {
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
+const accessHandlesMap = new Map<string, FileSystemSyncAccessHandle>()
+
 async function getFileHandle(fileName: string): Promise<FileSystemFileHandle> {
 	const root = await navigator.storage.getDirectory()
 	return await root.getFileHandle(`${fileName}.json`, { create: true })
 }
 
 async function createWorkerStorage(fileName: string = 'store') {
-	const fileHandle = await getFileHandle(fileName)
-	const accessHandle = await fileHandle.createSyncAccessHandle()
+	let accessHandle = accessHandlesMap.get(fileName)
+
+	if (!accessHandle) {
+		const fileHandle = await getFileHandle(fileName)
+		accessHandle = await fileHandle.createSyncAccessHandle()
+		accessHandlesMap.set(fileName, accessHandle)
+	}
 
 	const readStore = (): { [key: string]: string } => {
 		const size = accessHandle.getSize()
