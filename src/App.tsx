@@ -10,15 +10,15 @@
 //TODO: proft
 import { ReactiveMap } from '@solid-primitives/map'
 import { createElementSize } from '@solid-primitives/resize-observer'
+import { FitAddon } from '@xterm/addon-fit'
+import { Terminal } from '@xterm/xterm'
 import fs from 'indexeddb-fs'
 import {
-	For,
-	Setter,
-	batch,
 	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
+	onMount,
 	type Component
 } from 'solid-js'
 import {
@@ -27,11 +27,11 @@ import {
 	ResizablePanel
 } from '~/components/ui/resizable'
 import { Editor } from './Editor'
-import { Header } from './components/Header'
 import { StatusBar } from './StatusBar'
+import { EditorTabs } from './components/EditorTabs'
+import { Header } from './components/Header'
 import { FileSystem } from './fileSystem/FileSystem'
 import {
-	Node,
 	findItem,
 	getFileSystemStructure,
 	isFile,
@@ -43,11 +43,15 @@ import {
 	saveTabs,
 	setCurrentPath
 } from './stores/fsStore'
-import { currentBackground, currentColor } from './stores/themeStore'
-import { EditorTabs } from './components/EditorTabs'
-
+import { currentBackground, currentColor, isDark } from './stores/themeStore'
+import './xterm.css'
+import { Xterm } from './Xterm'
 const App: Component = () => {
 	const fileMap = new ReactiveMap<string, string>()
+	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
+		null!
+	)
+	const editorSize = createElementSize(editorContainer)
 	createResource(() => loadTabData(fileMap)) // could just keep the paths an preload them
 	const [headerRef, setHeaderRef] = createSignal<HTMLDivElement>(null!)
 	let container: HTMLElement = null!
@@ -81,7 +85,10 @@ const App: Component = () => {
 		if (!currentPath()) return
 		fs.writeFile(currentPath(), code())
 	})
-
+	createEffect(() => {
+		console.log('height', editorSize.height)
+		console.log('width', editorSize.width)
+	})
 	return (
 		<main
 			ref={container}
@@ -101,7 +108,6 @@ const App: Component = () => {
 					setHeaderRef={setHeaderRef}
 				/>
 			</div>
-
 			<Resizable
 				class="w-full flex"
 				style={{
@@ -110,22 +116,48 @@ const App: Component = () => {
 				}}
 				orientation="horizontal"
 			>
-				<ResizablePanel initialSize={0.25}>
+				<ResizablePanel class="overflow-hidden" initialSize={0.25}>
 					<FileSystem traversedNodes={traversedNodes} />
 				</ResizablePanel>
-				<ResizableHandle class={' bg-gray-600'} />
-				<ResizablePanel initialSize={0.75}>
-					<div>
-						<EditorTabs
-							currentNode={currentNode}
-							fileMap={fileMap}
-							setCurrentPath={setCurrentPath}
+				<ResizableHandle class={isDark() ? ' bg-gray-800' : 'bg-gray-200'} />
+				<ResizablePanel class="overflow-hidden" initialSize={0.7}>
+					<Resizable
+						class="w-full flex"
+						style={{
+							'background-color': currentBackground(),
+							color: currentColor()
+						}}
+						orientation="vertical"
+					>
+						<ResizablePanel
+							ref={setEditorContainer}
+							class="overflow-hidden"
+							initialSize={0.7}
+						>
+							<div class="">
+								<EditorTabs
+									currentNode={currentNode}
+									fileMap={fileMap}
+									setCurrentPath={setCurrentPath}
+								/>
+								<Editor code={code} setCode={setCode} size={editorSize} />
+							</div>
+						</ResizablePanel>
+						<ResizableHandle
+							class={isDark() ? ' bg-gray-800' : 'bg-gray-200'}
 						/>
-						<Editor code={code} setCode={setCode} />
-					</div>
+						<ResizablePanel class="overflow-hidden" initialSize={0.3}>
+							<Xterm />
+						</ResizablePanel>
+					</Resizable>
 				</ResizablePanel>
 			</Resizable>
-
+			{/* <EditorTabs
+				currentNode={currentNode}
+				fileMap={fileMap}
+				setCurrentPath={setCurrentPath}
+			/>
+			<Editor code={code} setCode={setCode} /> */}
 			<StatusBar />
 		</main>
 	)

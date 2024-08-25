@@ -3,12 +3,7 @@ import { history } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
 import { bracketMatching, indentOnInput } from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
-import {
-	Compartment,
-	EditorState,
-	Extension,
-	StateEffect
-} from '@codemirror/state'
+import { EditorState, Extension, StateEffect } from '@codemirror/state'
 import {
 	EditorView,
 	drawSelection,
@@ -20,7 +15,6 @@ import {
 	rectangularSelection
 } from '@codemirror/view'
 import { showMinimap } from '@replit/codemirror-minimap'
-import { createShortcut, useKeyDownList } from '@solid-primitives/keyboard'
 import {
 	tsFacetWorker,
 	tsHoverWorker,
@@ -39,27 +33,29 @@ import {
 	onCleanup,
 	onMount
 } from 'solid-js'
+import { formatter } from './format'
 import { createEditorControlledValue } from './hooks/controlledValue'
 import {
 	createCompartmentExtension,
 	useExtension
 } from './hooks/createCompartmentExtension'
+import { useShortcuts } from './hooks/useShortcuts'
 import {
+	editorHight,
 	editorRef,
-	setEditorRef,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
+	setEditorHight,
+	setEditorRef,
 	showLineNumber
 } from './stores/editorStore'
-import { formatter } from './format'
 import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
 import { defaultKeymap } from './utils/keymap'
-import { useShortcuts } from './hooks/useShortcuts'
 
-import { makeEventListener } from '@solid-primitives/event-listener'
-import ts from 'typescript'
+import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
+import ts from 'typescript'
 import { currentExtension, currentPath } from './stores/fsStore'
 
 export interface EditorProps {
@@ -67,6 +63,7 @@ export interface EditorProps {
 	setCode: Setter<string | undefined>
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
+	size: Readonly<NullableSize>
 }
 
 type Worker = WorkerShape &
@@ -78,7 +75,8 @@ export const Editor = ({
 	code,
 	setCode,
 	defaultTheme,
-	formatOnMount = () => true
+	formatOnMount,
+	size
 }: EditorProps) => {
 	useShortcuts(code, setCode)
 	const [editorView, setView] = createSignal<EditorView>(null!)
@@ -117,12 +115,14 @@ export const Editor = ({
 					const { selection, doc } = state
 					const { main } = selection
 					const line = doc.lineAt(main.head)
+					// lastLine.number
 					// const lineContents = view.state.sliceDoc(line.from, line.to)
 					const selectionText = state.sliceDoc(main.from, main.to)
 					setCurrentSelection(selectionText)
 					setCurrentLine(line.number)
 					setCurrentColumn(main.head - line.from)
 					setCode(doc.toString())
+					setEditorHight(Math.max(doc.lines * 13, 13))
 				})
 			}
 		})
@@ -133,7 +133,7 @@ export const Editor = ({
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
 
-		formatOnMount() && formatCode()
+		formatOnMount?.() && formatCode()
 		defaultTheme && setTheme(defaultTheme)
 
 		return view
@@ -198,12 +198,6 @@ export const Editor = ({
 		useExtension(currentTheme(), editorView)
 	})
 	createEditorControlledValue(editorView, code)
-	// createEffect(async () => {
-	// 	if (worker() === null) return
-	// 	if (code() === undefined || code() === '') return
-	// 	// console.log('file', await worker().getLints({ path: currentPath() }))
-	// 	// console.log('file', await worker().directoryExists(''))
-	// })
 
 	const formatCode = async () => {
 		const formatted = await formatter()(code()!)
@@ -241,11 +235,17 @@ export const Editor = ({
 	onMount(() => {
 		const view = setupEditor()
 		initWorker(view)
+		// editorRef().style.lineHeight = '1.5'
 	})
 
 	return (
 		<>
-			<div id="editor" class="w-full h-screen" ref={ref => setEditorRef(ref)} />
+			<div
+				id="editor"
+				class="w-full"
+				style={{ height: (size.height ?? editorHight()) + 'px' }}
+				ref={ref => setEditorRef(ref)}
+			/>
 		</>
 	)
 }
