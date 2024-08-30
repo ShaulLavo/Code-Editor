@@ -6,13 +6,13 @@ import { AutoAnimeListContainer } from './AutoAnimatedList'
 
 interface EditorTabsProps {
 	fileMap: Map<string, string>
-	currentNode: () => Node | undefined
+	filePath: () => string | undefined
 	setCurrentPath: Setter<string>
 }
 
 export const EditorTabs: Component<EditorTabsProps> = ({
 	fileMap,
-	currentNode,
+	filePath,
 	setCurrentPath
 }) => {
 	return (
@@ -22,7 +22,7 @@ export const EditorTabs: Component<EditorTabsProps> = ({
 		>
 			<For each={Array.from(fileMap.keys())}>
 				{file => {
-					const isSelected = () => currentNode()?.name === file.split('/').pop()
+					const isSelected = () => filePath() === file
 					return (
 						<button
 							onClick={() => {

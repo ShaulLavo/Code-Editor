@@ -68,7 +68,6 @@ export const StatusBar = () => {
 	return (
 		// <StatusBarCtx.Provider value={value}>
 		<div
-			// onMouseOver={() => console.log('over')}
 			class="absolute  bottom-0 w-full  z-50 flex "
 			style={{ 'background-color': currentBackground() }}
 		>

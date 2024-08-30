@@ -11,12 +11,22 @@ type Folder = {
 }
 export type Node = File | Folder
 
+//helpers
+export function sanitizeFilePath(path: string): string {
+	return path.replace(/\[/g, '__LSB__').replace(/\]/g, '__RSB__')
+}
+
+export function restoreFilePath(path: string): string {
+	return path.replace(/__LSB__/g, '[').replace(/__RSB__/g, ']')
+}
 export function isFile(node: Node): node is File {
 	return Boolean(node) && (node as Folder).nodes === undefined
 }
 export function isFolder(node: Node): node is Folder {
 	return (node as Folder)?.nodes !== undefined
 }
+
+//debug
 export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
 	let dirents = await fs.readDirectory(dirPath)
 
@@ -37,19 +47,12 @@ export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
 	return nodes
 }
 
-export function sanitizeFilePath(path: string): string {
-	return path.replace(/\[/g, '__LSB__').replace(/\]/g, '__RSB__')
-}
-
-export function restoreFilePath(path: string): string {
-	return path.replace(/__LSB__/g, '[').replace(/__RSB__/g, ']')
-}
-
 export async function createFileSystemStructure(
 	nodes: Node[],
-	basePath = ''
+	basePath = '',
+	isRootCall = true
 ): Promise<void> {
-	let start = performance.now()
+	let start = isRootCall ? performance.now() : 0
 	for (const node of nodes) {
 		const currentPath = sanitizeFilePath(basePath + '/' + node.name)
 		if (isFolder(node)) {
@@ -58,16 +61,17 @@ export async function createFileSystemStructure(
 			} catch (err) {
 				console.error(`Error creating directory ${currentPath}:`, err)
 			}
-			await createFileSystemStructure(node.nodes, currentPath)
+			await createFileSystemStructure(node.nodes, currentPath, false)
 		} else {
 			try {
-				const file = await fs.writeFile(currentPath, node.content ?? '')
+				await fs.writeFile(currentPath, node.content ?? '')
 			} catch (err) {
 				console.error(`Error creating file ${currentPath}:`, err)
 			}
 		}
 	}
-	console.log('createFileSystemStructure', performance.now() - start)
+	if (isRootCall)
+		console.log('createFileSystemStructure', performance.now() - start)
 }
 
 export async function deleteAll(directoryPath: string): Promise<void> {
@@ -81,6 +85,7 @@ export async function deleteAll(directoryPath: string): Promise<void> {
 	}
 }
 
+//nodes
 export function findItem(path: string, structure: Node[]): Node | undefined {
 	const parts = path.split('/').filter(part => part !== '')
 
@@ -92,6 +97,35 @@ export function findItem(path: string, structure: Node[]): Node | undefined {
 				}
 				if (isFolder(node)) {
 					return search(node.nodes, index + 1)
+				}
+			}
+		}
+		return undefined
+	}
+
+	return search(structure, 0)
+}
+
+export function getFirstDirOrParent(
+	path: string,
+	structure: Node[]
+): Node | undefined {
+	const parts = path.split('/').filter(part => part !== '')
+
+	function search(
+		nodes: Node[],
+		index = 0,
+		parent: Node | undefined = undefined
+	): Node | undefined {
+		for (const node of nodes) {
+			if (node.name === parts[index]) {
+				if (index === parts.length - 1) {
+					// Return the parent node if it's a file or the current node if it's a directory
+					return isFolder(node) ? node : parent
+				}
+				if (isFolder(node)) {
+					// Continue searching down the tree, passing the current node as the parent
+					return search(node.nodes, index + 1, node)
 				}
 			}
 		}

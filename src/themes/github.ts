@@ -96,3 +96,56 @@ export const githubDarkInit = (options?: Partial<CreateThemeOptions>) => {
 }
 
 export const githubDark = githubDarkInit()
+export const xTermGithubLightTheme = {
+	foreground: '#24292e',
+	background: '#fff',
+	cursor: '#005cc5',
+	cursorAccent: '#fff',
+	selectionBackground: '#BBDFFF',
+	selectionForeground: '#24292e',
+	selectionInactiveBackground: '#BBDFFF',
+	black: '#0d1117',
+	red: '#d73a49',
+	green: '#22863a',
+	yellow: '#e36209',
+	blue: '#005cc5',
+	magenta: '#6f42c1',
+	cyan: '#032f62',
+	white: '#fff',
+	brightBlack: '#6e7781',
+	brightRed: '#b31d28',
+	brightGreen: '#116329',
+	brightYellow: '#6a737d',
+	brightBlue: '#005cc5',
+	brightMagenta: '#6f42c1',
+	brightCyan: '#032f62',
+	brightWhite: '#24292e',
+	extendedAnsi: ['#ffeef0']
+}
+
+export const xTermGithubDarkTheme = {
+	foreground: '#c9d1d9',
+	background: '#0d1117',
+	cursor: '#79c0ff',
+	cursorAccent: '#0d1117',
+	selectionBackground: '#003d73',
+	selectionForeground: '#c9d1d9',
+	selectionInactiveBackground: '#003d73',
+	black: '#0d1117',
+	red: '#ff7b72',
+	green: '#7ee787',
+	yellow: '#ffab70',
+	blue: '#79c0ff',
+	magenta: '#d2a8ff',
+	cyan: '#a5d6ff',
+	white: '#c9d1d9',
+	brightBlack: '#8b949e',
+	brightRed: '#f97583',
+	brightGreen: '#7ee787',
+	brightYellow: '#ffdcd7',
+	brightBlue: '#79c0ff',
+	brightMagenta: '#d2a8ff',
+	brightCyan: '#a5d6ff',
+	brightWhite: '#d2a8ff',
+	extendedAnsi: ['#ffeef0']
+}

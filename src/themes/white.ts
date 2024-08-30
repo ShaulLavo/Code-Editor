@@ -26,7 +26,32 @@ const cl = {
 	regexp: '#6b7a88',
 	tag: null
 }
-
+export const cd = {
+	background: '#000',
+	foreground: '#fff',
+	selection: '#7d46fc3f',
+	selectionMatch: '#7d46fc7f',
+	cursor: '#7d46fc',
+	dropdownBackground: '#0a0b0f',
+	dropdownBorder: '#1e1d27',
+	activeLine: '#00346eb0',
+	matchingBracket: '#7d46fc7f',
+	keyword: null,
+	storage: null,
+	variable: null,
+	parameter: null,
+	function: null,
+	string: '#a8a8b1',
+	constant: null,
+	type: null,
+	class: null,
+	number: null,
+	comment: '#2e2e37',
+	heading: null,
+	invalid: null,
+	regexp: '#a8a8b1',
+	tag: null
+}
 export const defaultSettingsWhiteLight: CreateThemeOptions['settings'] = {
 	background: cl.background,
 	foreground: cl.foreground,
@@ -86,32 +111,7 @@ export const whiteLightInit = (options?: Partial<CreateThemeOptions>) => {
 }
 
 export const whiteLight = whiteLightInit()
-export const cd = {
-	background: '#000',
-	foreground: '#fff',
-	selection: '#7d46fc3f',
-	selectionMatch: '#7d46fc7f',
-	cursor: '#7d46fc',
-	dropdownBackground: '#0a0b0f',
-	dropdownBorder: '#1e1d27',
-	activeLine: '#00346eb0',
-	matchingBracket: '#7d46fc7f',
-	keyword: null,
-	storage: null,
-	variable: null,
-	parameter: null,
-	function: null,
-	string: '#a8a8b1',
-	constant: null,
-	type: null,
-	class: null,
-	number: null,
-	comment: '#2e2e37',
-	heading: null,
-	invalid: null,
-	regexp: '#a8a8b1',
-	tag: null
-}
+
 export const defaultSettingsWhiteDark: CreateThemeOptions['settings'] = {
 	background: cd.background,
 	foreground: cd.foreground,
@@ -171,3 +171,75 @@ export const whiteDarkInit = (options?: Partial<CreateThemeOptions>) => {
 }
 
 export const whiteDark = whiteDarkInit()
+
+export const xTermWhiteLightTheme = {
+	// Default colors
+	foreground: cl.foreground, // Map to foreground color
+	background: cl.background, // Map to background color
+	cursor: cl.cursor, // Map to cursor color
+	cursorAccent: cl.background, // Map to background color for contrast
+	selectionBackground: cl.selection, // Map to selection background color
+	selectionForeground: cl.foreground, // Map to a visible foreground color on selection
+	selectionInactiveBackground: cl.selectionMatch, // Inactive selection background color
+
+	// ANSI colors (mapped based on usage in styles)
+	black: cl.background, // Background as the darkest color
+	red: '#0431fa', // Operators and brackets
+	green: cl.string, // Strings and regexps
+	yellow: cl.comment, // Comments for a less bright color
+	blue: cl.cursor, // Cursor color as blue
+	magenta: '#0431fa', // Operators, matching color for ANSI
+	cyan: cl.regexp, // Regexps and similar
+	white: cl.foreground, // Foreground as white
+
+	brightBlack: cl.comment, // Brighter black, using comment color
+	brightRed: '#0431fa', // Bright operators and brackets
+	brightGreen: cl.string, // Bright strings
+	brightYellow: cl.comment, // Bright comments
+	brightBlue: '#0431fa', // Brighter blue for operators
+	brightMagenta: '#0431fa', // Brighter magenta, matching ANSI
+	brightCyan: cl.regexp, // Brighter regexps
+	brightWhite: cl.foreground, // Bright white, matching foreground
+
+	// Optional extended ANSI colors (16-255)
+	extendedAnsi: [
+		cl.activeLine // Active line highlight color
+		// Add more if needed
+	]
+}
+
+export const xTermWhiteDarkTheme = {
+	// Default colors
+	foreground: cd.foreground, // Map to foreground color
+	background: cd.background, // Map to background color
+	cursor: cd.cursor, // Map to cursor color
+	cursorAccent: cd.background, // Map to background color for contrast
+	selectionBackground: cd.selection, // Map to selection background color
+	selectionForeground: cd.foreground, // Map to a visible foreground color on selection
+	selectionInactiveBackground: cd.selectionMatch, // Inactive selection background color
+
+	// ANSI colors (mapped based on usage in styles)
+	black: cd.background, // Background as the darkest color
+	red: '#bb9af7', // Operators and brackets
+	green: cd.string, // Strings and regexps
+	yellow: cd.comment, // Comments for a less bright color
+	blue: cd.cursor, // Cursor color as blue
+	magenta: '#bb9af7', // Operators, matching color for ANSI
+	cyan: cd.regexp, // Regexps and similar
+	white: cd.foreground, // Foreground as white
+
+	brightBlack: cd.comment, // Brighter black, using comment color
+	brightRed: '#bb9af7', // Bright operators and brackets
+	brightGreen: cd.string, // Bright strings
+	brightYellow: cd.comment, // Bright comments
+	brightBlue: '#bb9af7', // Brighter blue for operators
+	brightMagenta: '#bb9af7', // Brighter magenta, matching ANSI
+	brightCyan: cd.regexp, // Brighter regexps
+	brightWhite: cd.foreground, // Bright white, matching foreground
+
+	// Optional extended ANSI colors (16-255)
+	extendedAnsi: [
+		cd.activeLine // Active line highlight color
+		// Add more if needed
+	]
+}

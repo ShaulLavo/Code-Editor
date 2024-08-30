@@ -11,7 +11,9 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/command-line-args": "^5.2.3",
     "@types/js-beautify": "^1.14.3",
+    "@types/minimist": "^1.2.5",
     "@types/prettier": "^3.0.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
@@ -39,6 +41,7 @@
     "@replit/codemirror-minimap": "^0.5.2",
     "@replit/codemirror-vscode-keymap": "^6.0.2",
     "@solid-primitives/event-listener": "^2.3.3",
+    "@solid-primitives/filesystem": "^1.2.2",
     "@solid-primitives/keyboard": "^1.2.8",
     "@solid-primitives/map": "^0.4.11",
     "@solid-primitives/resize-observer": "^2.0.26",
@@ -62,18 +65,24 @@
     "comlink": "^4.4.1",
     "dnd-tree-view": "^4.0.2",
     "indexeddb-fs": "^2.1.5",
+    "isomorphic-git": "^0.0.21",
     "js-beautify": "^1.15.1",
+    "jszip": "^3.10.1",
     "local-echo": "github:wavesoft/local-echo",
     "lz-string": "^1.5.0",
+    "minimist": "^1.2.8",
+    "neofetch": "^7.1.0",
     "prettier": "^3.3.3",
     "prettier-plugin-json-formats": "^0.5.0",
     "prettier-plugin-packagejson": "^2.5.2",
+    "rainbowbrackets": "^2.0.2",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.8.18",
     "solid-spinner": "^0.2.0",
     "solid-transition-group": "^0.2.3",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "thememirror": "^2.0.1"
+    "thememirror": "^2.0.1",
+    "xterm-readline": "^1.1.1"
   }
 }

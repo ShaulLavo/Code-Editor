@@ -73,3 +73,75 @@ export const xcodeDarkInit = (options?: Partial<CreateThemeOptions>) => {
 }
 
 export const xcodeDark = xcodeDarkInit()
+
+export const xTermXcodeLightTheme = {
+	// Default colors
+	foreground: '#3D3D3D', // Mapped to foreground color
+	background: '#fff', // Mapped to background color
+	cursor: '#327A9E', // Cursor color (use a suitable variable color)
+	cursorAccent: '#fff', // Cursor accent (background color)
+	selectionBackground: '#BBDFFF', // Selection background color
+	selectionForeground: '#3D3D3D', // Foreground color on selection for visibility
+	selectionInactiveBackground: '#BBDFFF', // Inactive selection background
+
+	// ANSI colors (mapped based on usage in styles)
+	black: '#292A30', // A dark background-like color
+	red: '#D23423', // Strings and meta
+	green: '#23575C', // Variable names
+	yellow: '#707F8D', // Comments and quotes
+	blue: '#032f62', // Names and general code
+	magenta: '#aa0d91', // Keywords and type names
+	cyan: '#327A9E', // Variable definitions
+	white: '#fff', // Brightest color (background)
+
+	brightBlack: '#AFAFAF', // Gutter foreground
+	brightRed: '#D23423', // Brighter strings and meta
+	brightGreen: '#23575C', // Brighter variable names
+	brightYellow: '#707F8D', // Brighter comments
+	brightBlue: '#032f62', // Brighter name tags
+	brightMagenta: '#522BB2', // Brighter type names
+	brightCyan: '#327A9E', // Brighter variable definitions
+	brightWhite: '#fff', // Bright white for high contrast
+
+	// Optional extended ANSI colors (16-255)
+	extendedAnsi: [
+		'#d5e6ff69' // Line highlight
+		// Add more if needed
+	]
+}
+
+export const xTermXcodeDarkTheme = {
+	// Default colors
+	foreground: '#CECFD0', // Mapped to foreground color
+	background: '#292A30', // Mapped to background color
+	cursor: '#6BDFFF', // Cursor color (use a suitable variable color)
+	cursorAccent: '#292A30', // Cursor accent (background color)
+	selectionBackground: '#727377', // Selection background color
+	selectionForeground: '#CECFD0', // Foreground color on selection for visibility
+	selectionInactiveBackground: '#727377', // Inactive selection background
+
+	// ANSI colors (mapped based on usage in styles)
+	black: '#292A30', // Background-like color
+	red: '#FF8170', // Strings and meta
+	green: '#6BAA9F', // Variable names
+	yellow: '#7F8C98', // Comments and quotes
+	blue: '#6BDFFF', // Variable definitions
+	magenta: '#FF7AB2', // Keywords and type names
+	cyan: '#ACF2E4', // Variable names
+	white: '#fff', // Brightest color
+
+	brightBlack: '#7F8C98', // Brighter comments
+	brightRed: '#FF8170', // Brighter strings and meta
+	brightGreen: '#6BAA9F', // Brighter variable names
+	brightYellow: '#7F8C98', // Brighter comments
+	brightBlue: '#DABAFF', // Brighter type names
+	brightMagenta: '#FF7AB2', // Brighter keywords
+	brightCyan: '#6BDFFF', // Brighter variable definitions
+	brightWhite: '#CECFD0', // Bright white for high contrast
+
+	// Optional extended ANSI colors (16-255)
+	extendedAnsi: [
+		'#ffffff0f' // Line highlight
+		// Add more if needed
+	]
+}

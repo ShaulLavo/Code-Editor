@@ -158,3 +158,39 @@ export const poimandres = createTheme({
 		// }
 	]
 })
+
+export const xTermPoimandresTheme = {
+	// Default colors
+	foreground: baseColors.offWhite, // Map to a suitable foreground color
+	background: baseColors.bg, // Map to your background color
+	cursor: baseColors.focus, // Cursor color
+	cursorAccent: baseColors.offWhite, // Accent color for the cursor (fg color for a block cursor)
+	selectionBackground: baseColors.selection, // Selection background color
+	selectionForeground: baseColors.white, // Selection foreground color (optional)
+	selectionInactiveBackground: baseColors.selection, // Inactive selection background color
+
+	// ANSI colors
+	black: baseColors.black, // ANSI black
+	red: baseColors.hotRed, // ANSI red
+	green: baseColors.brightMint, // ANSI green
+	yellow: baseColors.brightYellow, // ANSI yellow
+	blue: baseColors.lowerBlue, // ANSI blue
+	magenta: baseColors.pink, // ANSI magenta
+	cyan: baseColors.lowerMint, // ANSI cyan
+	white: baseColors.offWhite, // ANSI white
+
+	brightBlack: baseColors.darkerGray, // ANSI bright black
+	brightRed: baseColors.hotRed, // ANSI bright red
+	brightGreen: baseColors.brightMint, // ANSI bright green
+	brightYellow: baseColors.brightYellow, // ANSI bright yellow
+	brightBlue: baseColors.lightBlue, // ANSI bright blue
+	brightMagenta: baseColors.pink, // ANSI bright magenta
+	brightCyan: baseColors.brightMint, // ANSI bright cyan
+	brightWhite: baseColors.white, // ANSI bright white
+
+	// Optional extended ANSI colors (16-255)
+	extendedAnsi: [
+		baseColors.bluishGrayBrighter // Example of how you can map additional colors
+		// ... more colors if needed
+	]
+}

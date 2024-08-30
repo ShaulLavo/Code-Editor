@@ -1,7 +1,12 @@
 import { closeBrackets } from '@codemirror/autocomplete'
 import { history } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
-import { bracketMatching, indentOnInput } from '@codemirror/language'
+import {
+	bracketMatching,
+	foldGutter,
+	indentOnInput,
+	matchBrackets
+} from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
 import { EditorState, Extension, StateEffect } from '@codemirror/state'
 import {
@@ -22,7 +27,6 @@ import {
 	tsSyncWorker
 } from '@valtown/codemirror-ts'
 import { type WorkerShape } from '@valtown/codemirror-ts/worker'
-import * as Comlink from 'comlink'
 import {
 	Accessor,
 	Resource,
@@ -30,15 +34,13 @@ import {
 	batch,
 	createEffect,
 	createSignal,
+	on,
 	onCleanup,
 	onMount
 } from 'solid-js'
 import { extensionMap, formatter } from './format'
 import { createEditorControlledValue } from './hooks/controlledValue'
-import {
-	createCompartmentExtension,
-	useExtension
-} from './hooks/createCompartmentExtension'
+import { createCompartmentExtension } from './hooks/createCompartmentExtension'
 import { useShortcuts } from './hooks/useShortcuts'
 import {
 	editorHight,
@@ -59,6 +61,10 @@ import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
 import ts from 'typescript'
 import { currentExtension, currentPath } from './stores/fsStore'
+import { initTsWorker } from './utils/worker'
+import 'neofetch'
+//@ts-ignore no types :(
+import rainbowBrackets from 'rainbowbrackets'
 
 export interface EditorProps {
 	code: Accessor<string> | Resource<string | undefined>
@@ -66,62 +72,6 @@ export interface EditorProps {
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
-}
-
-type Worker = WorkerShape &
-	Remote<ts.System> & {
-		close: () => void
-	}
-
-function createLoggingProxy<T extends {}>(target: T): T {
-	return new Proxy(target, {
-		get(target, prop, receiver) {
-			const originalMethod = Reflect.get(target, prop, receiver)
-			if (typeof originalMethod === 'function') {
-				return (...args: any[]) => {
-					console.log(`Calling ${String(prop)} with arguments:`, args)
-					const result = originalMethod.apply(target, args)
-					if (result instanceof Promise) {
-						return result.then(res => {
-							console.log(`Result from ${String(prop)}:`, res)
-							return res
-						})
-					} else {
-						console.log(`Result from ${String(prop)}:`, result)
-						return result
-					}
-				}
-			}
-			return originalMethod
-		}
-	})
-}
-function WorkerStatusProxy<T extends {}>(target: T): T {
-	return new Proxy(target, {
-		get(target, prop, receiver) {
-			const originalMethod = Reflect.get(target, prop, receiver)
-			if (typeof originalMethod === 'function') {
-				return (...args: any[]) => {
-					if (prop === 'initialize') {
-						setIsTsLoading(true)
-					}
-					const result = originalMethod.apply(target, args)
-					if (prop === 'getLints') {
-						if (result instanceof Promise) {
-							return result.then(res => {
-								setIsTsLoading(false)
-								return res
-							})
-						} else {
-							setIsTsLoading(false)
-						}
-					}
-					return result
-				}
-			}
-			return originalMethod
-		}
-	})
 }
 
 export const Editor = ({
@@ -133,29 +83,33 @@ export const Editor = ({
 }: EditorProps) => {
 	useShortcuts(code, setCode)
 	const [editorView, setView] = createSignal<EditorView>(null!)
-	const [worker, setWorker] = createSignal<Worker>(null!)
+	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
+	let worker: WorkerShape & Remote<ts.System> & { close: () => void } = null!
 	const start = performance.now()
-	const baseExtensions = [
-		highlightSpecialChars(),
-		history(),
-		drawSelection(),
-		EditorState.allowMultipleSelections.of(true),
-		indentOnInput(),
-		bracketMatching(),
-		closeBrackets(),
-		gutter({ class: 'gutter' }),
-		rectangularSelection(),
-		highlightActiveLine(),
-		highlightSelectionMatches(),
-		EditorView.lineWrapping,
-		keymap.of(defaultKeymap),
-		javascript({ jsx: true, typescript: true })
-	]
-
 	const setupEditor = () => {
+		const baseExtensions = [
+			highlightSpecialChars(),
+			history(),
+			drawSelection(),
+			EditorState.allowMultipleSelections.of(true),
+			indentOnInput(),
+			bracketMatching(),
+			closeBrackets(),
+			gutter({ class: 'gutter' }),
+			rectangularSelection(),
+			highlightActiveLine(),
+			highlightSelectionMatches(),
+			EditorView.lineWrapping,
+			keymap.of(defaultKeymap),
+			javascript({ jsx: true, typescript: true }),
+			foldGutter({}),
+			bracketMatching(),
+			rainbowBrackets()
+		] as Extension[]
 		const editorState = EditorState.create({
 			doc: code(),
 			extensions: baseExtensions
+			// extensions: baseExtensions
 		})
 
 		const view = new EditorView({
@@ -192,67 +146,41 @@ export const Editor = ({
 
 		return view
 	}
-	const initWorker = async (view: EditorView) => {
-		const innerWorker = new Worker(new URL('./worker.ts', import.meta.url), {
-			type: 'module'
-		})
-		const worker = WorkerStatusProxy(Comlink.wrap<Worker>(innerWorker))
-		onCleanup(() => worker.close())
 
-		innerWorker.onmessage = async e => {
-			if (e.data === 'ready') {
-				await worker.initialize()
-				setWorker(() => worker)
-
-				console.log(
-					`time for TS worker to load: ${performance.now() - start} milliseconds`
-				)
-			}
-		}
+	const formatCode = async () => {
+		const formatted = await formatter()(code()!)
+		setCode(formatted)
 	}
 
-	const createExtention = (
-		extention: Extension | Accessor<Extension | undefined>
-	) => createCompartmentExtension(extention, editorView)
+	const createExtention = (extention: Accessor<Extension>) =>
+		createCompartmentExtension(extention, editorView)
 
-	createExtention(currentTheme())
 	createEditorControlledValue(editorView, code)
+	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
+	createExtention(currentTheme)
+	createExtention(() =>
+		showMinimap.compute([], () => {
+			return {
+				create: () => {
+					const minimap = document.createElement('div')
+					// autoHide(minimap)
+					return { dom: minimap }
+				},
+				showOverlay: 'mouse-over',
+				displayText: 'blocks'
+			}
+		})
+	)
+	createExtention(() => {
+		if (!isWorkerReady() || !worker || !isTs()) return []
 
-	createEffect(() => {
-		if (editorView() === null || worker() === null) return
-		if (isTs()) {
-			editorView().dispatch({
-				effects: StateEffect.reconfigure.of(
-					[
-						tsFacetWorker.of({ worker: worker(), path: currentPath() }),
-						tsSyncWorker(),
-						tsLinterWorker(),
-						tsHoverWorker()
-					].concat(baseExtensions)
-				)
-			})
-		} else {
-			editorView().dispatch({
-				effects: StateEffect.reconfigure.of(baseExtensions)
-			})
-		}
-		useExtension(
-			showMinimap.compute([], () => {
-				return {
-					create: () => {
-						const minimap = document.createElement('div')
-						// autoHide(minimap)
-						return { dom: minimap }
-					},
-					showOverlay: 'mouse-over',
-					displayText: 'blocks'
-				}
-			}),
-			editorView
-		)
-
-		useExtension(showLineNumber?.() ? lineNumbers() : [], editorView)
-		useExtension(currentTheme(), editorView)
+		const tsExtensions = [
+			tsFacetWorker.of({ worker, path: currentPath() }),
+			tsSyncWorker(),
+			tsLinterWorker(),
+			tsHoverWorker()
+		]
+		return tsExtensions
 	})
 
 	createEffect(() => {
@@ -261,42 +189,15 @@ export const Editor = ({
 			setIsTsLoading(true)
 		}
 	})
-	const formatCode = async () => {
-		const formatted = await formatter()(code()!)
-		setCode(formatted)
-	}
-
-	const autoHide = (el: HTMLElement) => {
-		el.classList.add('transition-display')
-		let isVisible = false
-		let rect = el.getBoundingClientRect()
-		const showOnHover = (event: MouseEvent) => {
-			const newRect = el.getBoundingClientRect()
-			if (newRect.width) rect = newRect
-
-			const isMouseOverElement =
-				event.clientX >= rect.left &&
-				event.clientX <= rect.right &&
-				event.clientY >= rect.top &&
-				event.clientY <= rect.bottom
-
-			if (isMouseOverElement && !isVisible) {
-				el.style.display = 'block'
-				el.style.opacity = '1'
-				isVisible = true
-			} else if (!isMouseOverElement && isVisible) {
-				el.style.display = 'none'
-				el.style.opacity = '0'
-				isVisible = false
-			}
-		}
-		window.addEventListener('mousemove', showOnHover)
-		onCleanup(() => window.removeEventListener('mousemove', showOnHover))
-	}
 
 	onMount(() => {
-		const view = setupEditor()
-		initWorker(view)
+		setupEditor()
+		initTsWorker(async tsWorker => {
+			worker = tsWorker
+			console.log(Object.keys(worker))
+			console.log(await worker.directoryExists(''))
+			setIsWorkerReady(true)
+		})
 	})
 
 	return (
@@ -304,7 +205,9 @@ export const Editor = ({
 			<div
 				id="editor"
 				class="w-full"
-				style={{ height: (size.height ?? editorHight()) - 40 + 'px' }}
+				style={{
+					height: (size.height ?? editorHight()) - 40 + 'px'
+				}}
 				ref={ref => setEditorRef(ref)}
 			/>
 		</>

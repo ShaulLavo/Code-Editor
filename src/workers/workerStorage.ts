@@ -23,13 +23,19 @@ async function getFileHandle(fileName: string): Promise<FileSystemFileHandle> {
 }
 
 async function createWorkerStorage(fileName: string = 'store') {
-	let accessHandle = accessHandlesMap.get(fileName)
+	let lockHandle: FileSystemSyncAccessHandle | null = null
 
+	let accessHandle = accessHandlesMap.get(fileName)
 	if (!accessHandle) {
 		const fileHandle = await getFileHandle(fileName)
 		accessHandle = await fileHandle.createSyncAccessHandle()
 		accessHandlesMap.set(fileName, accessHandle)
 	}
+	console.log(
+		'handle:',
+		JSON.stringify(accessHandle),
+		accessHandlesMap.get(fileName)
+	)
 
 	const readStore = (): { [key: string]: string } => {
 		const size = accessHandle.getSize()
@@ -91,6 +97,13 @@ async function createWorkerStorage(fileName: string = 'store') {
 	self.addEventListener('unload', () => {
 		accessHandle.close()
 	})
+
+	if (import.meta.hot) {
+		import.meta.hot.dispose(() => {
+			console.log('Disposing worker storage')
+			accessHandle.close()
+		})
+	}
 
 	return storage
 }

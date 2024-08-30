@@ -16,7 +16,7 @@ import {
 	themeSettings
 } from '../stores/themeStore'
 import { capitalizeFirstLetter } from '../utils/string'
-import { compilerOptions } from '../worker'
+import { compilerOptions } from '~/constants/constants'
 interface HeaderProps {
 	code: Resource<string | undefined>
 	setCode: (code: string) => void

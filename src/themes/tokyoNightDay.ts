@@ -55,3 +55,29 @@ export const tokyoNightDayInit = (options?: Partial<CreateThemeOptions>) => {
 }
 
 export const tokyoNightDay = tokyoNightDayInit()
+export const xTermTokyoNightDayTheme = {
+	foreground: '#3760bf',
+	background: '#e1e2e7',
+	cursor: '#3760bf',
+	cursorAccent: '#e1e2e7',
+	selectionBackground: '#99a7df',
+	selectionForeground: '#3760bf',
+	selectionInactiveBackground: '#99a7df',
+	black: '#e1e2e7',
+	red: '#f52a65',
+	green: '#587539',
+	yellow: '#b15c00',
+	blue: '#3760bf',
+	magenta: '#007197',
+	cyan: '#587539',
+	white: '#3760bf',
+	brightBlack: '#848cb5',
+	brightRed: '#f52a65',
+	brightGreen: '#587539',
+	brightYellow: '#b15c00',
+	brightBlue: '#3760bf',
+	brightMagenta: '#007197',
+	brightCyan: '#587539',
+	brightWhite: '#3760bf',
+	extendedAnsi: ['#5f5faf11']
+}

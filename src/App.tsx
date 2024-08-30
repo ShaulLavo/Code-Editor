@@ -32,7 +32,9 @@ import { FileSystem } from './fileSystem/FileSystem'
 import {
 	findItem,
 	getFileSystemStructure,
+	getFirstDirOrParent,
 	isFile,
+	isFolder,
 	sanitizeFilePath,
 	traverseAndSetOpen
 } from './fileSystem/fileSystem.service'
@@ -45,31 +47,49 @@ import {
 } from './stores/fsStore'
 import { currentBackground, currentColor, isDark } from './stores/themeStore'
 import './xterm.css'
+import { downloadNerdFont } from './utils/font'
+import { makePersisted, cookieStorage } from '@solid-primitives/storage'
+import { isTs } from './stores/editorStore'
+import { Formmater } from './format'
 const App: Component = () => {
-	const fonts = document.fonts
-	const fileMap = new ReactiveMap<string, string>()
+	const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
+		createSignal<number[]>([0.25, 0.75]),
+		{ name: 'horizontalPanelSize' }
+	)
+	const [verticalPanelSize, setVerticalPanelSize] = makePersisted(
+		createSignal<number[]>([0.7, 0.3]),
+		{ name: 'verticalPanelSize' }
+	)
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
 	)
+
 	const editorSize = createElementSize(editorContainer)
-	createResource(() => loadTabData(fileMap)) // could just keep the paths an preload them
 	const [headerRef, setHeaderRef] = createSignal<HTMLDivElement>(null!)
 	let container: HTMLElement = null!
 	const size = createElementSize(headerRef)
 
-	const [nodes, { refetch }] = createResource(() =>
+	const [nodes, { refetch, mutate }] = createResource(() =>
 		getFileSystemStructure('root')
 	)
 
+	const fileMap = new ReactiveMap<string, string>()
+	createResource(() => loadTabData(fileMap))
+
 	const currentNode = () =>
 		nodes() ? findItem(currentPath(), nodes()!) : undefined
+	const dirPath = () =>
+		nodes() ? getFirstDirOrParent(currentPath(), nodes()!) : undefined
 
 	const filePath = () => (isFile(currentNode) ? currentPath() : undefined)
 
 	const [code, { mutate: setCode }] = createResource(filePath, async path => {
 		if (!path) return ''
 		if (fileMap.has(path)) return fileMap.get(path)
-		const file = (await fs.readFile(sanitizeFilePath(path))) as string
+		let file = (await fs.readFile(sanitizeFilePath(path))) as string
+		if (isTs()) {
+			file = await Formmater.prettier(file)
+		}
 		fileMap.set(path, file)
 		try {
 			await saveTabs(fileMap.keys())
@@ -84,13 +104,11 @@ const App: Component = () => {
 			? []
 			: traverseAndSetOpen(nodes()!, currentPath().split('/').filter(Boolean))
 	)
-	// createEffect(() => {
-	// 	if (code() === undefined || code() === '') return
-	// 	if (!currentPath()) return
-	// 	fs.writeFile(sanitizeFilePath(currentPath()), code())
-	// })
+
 	onMount(async () => {
-		// console.log(fonts.values())
+		document.fonts.ready.then(fontFaceSet => {
+			const fontFaces = [...fontFaceSet]
+		})
 	})
 	return (
 		<main
@@ -112,6 +130,12 @@ const App: Component = () => {
 				/>
 			</div>
 			<Resizable
+				onSizesChange={size => {
+					if (size.length !== 2) return
+					if (size[0] === 0.5 && size[1] === 0.5) return
+
+					setHorizontalPanelSize(size)
+				}}
 				class="w-full flex"
 				style={{
 					'background-color': currentBackground(),
@@ -119,12 +143,23 @@ const App: Component = () => {
 				}}
 				orientation="horizontal"
 			>
-				<ResizablePanel class="overflow-x-hidden" initialSize={0.25}>
+				<ResizablePanel
+					class="overflow-x-hidden"
+					initialSize={horizontalPanelSize()?.[0]}
+				>
 					<FileSystem traversedNodes={traversedNodes} />
 				</ResizablePanel>
 				<ResizableHandle class={isDark() ? ' bg-gray-800' : 'bg-gray-200'} />
-				<ResizablePanel class="overflow-hidden" initialSize={0.75}>
+				<ResizablePanel
+					class="overflow-hidden"
+					initialSize={horizontalPanelSize()?.[1]}
+				>
 					<Resizable
+						onSizesChange={size => {
+							if (size.length !== 2) return
+							if (size[0] === 0.5 && size[1] === 0.5) return
+							setVerticalPanelSize(size)
+						}}
 						class="w-full"
 						style={{
 							'background-color': currentBackground(),
@@ -135,12 +170,12 @@ const App: Component = () => {
 						<ResizablePanel
 							ref={setEditorContainer}
 							class="overflow-hidden"
-							initialSize={0.7}
+							initialSize={verticalPanelSize()[0]}
 						>
 							<div class="">
 								<EditorTabs
-									currentNode={currentNode}
 									fileMap={fileMap}
+									filePath={filePath}
 									setCurrentPath={setCurrentPath}
 								/>
 								<Editor code={code} setCode={setCode} size={editorSize} />
@@ -149,8 +184,11 @@ const App: Component = () => {
 						<ResizableHandle
 							class={isDark() ? ' bg-gray-800' : 'bg-blue-200'}
 						/>
-						<ResizablePanel class="overflow-hidden" initialSize={0.3}>
-							<Xterm />
+						<ResizablePanel
+							class="overflow-hidden"
+							initialSize={verticalPanelSize()[1]}
+						>
+							<Xterm dirPath={dirPath} />
 						</ResizablePanel>
 					</Resizable>
 				</ResizablePanel>
