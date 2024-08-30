@@ -5,7 +5,7 @@ import {
 	createFileSystemStructure,
 	deleteAll
 } from '../fileSystem/fileSystem.service'
-import { Formmater } from '../format'
+import { Formmater, getConfigFromExt } from '../format'
 import { setShowLineNumber, showLineNumber } from '../stores/editorStore'
 import {
 	ThemeKey,
@@ -17,18 +17,28 @@ import {
 } from '../stores/themeStore'
 import { capitalizeFirstLetter } from '../utils/string'
 import { compilerOptions } from '~/constants/constants'
+import { Node } from '~/fileSystem/fileSystem.service'
+import { ICreateFsOutput } from 'indexeddb-fs'
 interface HeaderProps {
 	code: Resource<string | undefined>
 	setCode: (code: string) => void
 	setHeaderRef: (el: HTMLDivElement) => void
 	refetch: () => void
+	currentExtension: () => string
+	fs: ICreateFsOutput
+	clearTabs: () => Promise<void>
+	setCurrentPath(path: string): void
 }
 
 export const Header: Component<HeaderProps> = ({
 	code,
 	setCode,
 	refetch,
-	setHeaderRef
+	setHeaderRef,
+	currentExtension,
+	fs,
+	clearTabs,
+	setCurrentPath
 }) => {
 	let hasTitle = false
 
@@ -64,7 +74,13 @@ export const Header: Component<HeaderProps> = ({
 					color: currentColor()
 				}}
 				onMouseDown={async () =>
-					code() !== undefined && setCode(await Formmater.prettier(code()!))
+					code() !== undefined &&
+					setCode(
+						await Formmater.prettier(
+							code()!,
+							getConfigFromExt(currentExtension()!)
+						)
+					)
 				}
 			>
 				prettier
@@ -104,7 +120,9 @@ export const Header: Component<HeaderProps> = ({
 			|
 			<button
 				onMouseDown={async () => {
-					await deleteAll('root')
+					await deleteAll('root', fs)
+					await clearTabs()
+					setCurrentPath('')
 					refetch()
 				}}
 			>
@@ -113,7 +131,7 @@ export const Header: Component<HeaderProps> = ({
 			|
 			<button
 				onMouseDown={async () => {
-					await createFileSystemStructure(nextApp)
+					await createFileSystemStructure(nextApp, fs)
 					refetch()
 				}}
 			>
@@ -122,7 +140,7 @@ export const Header: Component<HeaderProps> = ({
 			|
 			<button
 				onMouseDown={async () => {
-					await createFileSystemStructure(demoNodes)
+					await createFileSystemStructure(demoNodes, fs)
 					refetch()
 				}}
 			>

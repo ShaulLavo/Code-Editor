@@ -1,4 +1,4 @@
-import { fs } from '~/stores/fsStore'
+import { ICreateFsOutput } from 'indexeddb-fs'
 
 type File = {
 	name: string
@@ -27,12 +27,15 @@ export function isFolder(node: Node): node is Folder {
 }
 
 //debug
-export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
+export async function getFileSystemStructure(
+	dirPath: string,
+	fs: ICreateFsOutput
+): Promise<Node[]> {
 	let dirents = await fs.readDirectory(dirPath)
 
 	const directoryPromises = dirents.directories.map(async dir => {
 		const fullPath = `${dirPath}/${dir.name}`
-		const children = await getFileSystemStructure(fullPath)
+		const children = await getFileSystemStructure(fullPath, fs)
 		return { name: restoreFilePath(dir.name), nodes: children }
 	})
 
@@ -49,6 +52,7 @@ export async function getFileSystemStructure(dirPath: string): Promise<Node[]> {
 
 export async function createFileSystemStructure(
 	nodes: Node[],
+	fs: ICreateFsOutput,
 	basePath = '',
 	isRootCall = true
 ): Promise<void> {
@@ -61,7 +65,7 @@ export async function createFileSystemStructure(
 			} catch (err) {
 				console.error(`Error creating directory ${currentPath}:`, err)
 			}
-			await createFileSystemStructure(node.nodes, currentPath, false)
+			await createFileSystemStructure(node.nodes, fs, currentPath, false)
 		} else {
 			try {
 				await fs.writeFile(currentPath, node.content ?? '')
@@ -74,7 +78,10 @@ export async function createFileSystemStructure(
 		console.log('createFileSystemStructure', performance.now() - start)
 }
 
-export async function deleteAll(directoryPath: string): Promise<void> {
+export async function deleteAll(
+	directoryPath: string,
+	fs: ICreateFsOutput
+): Promise<void> {
 	const dirents = await fs.readDirectory(sanitizeFilePath(directoryPath))
 
 	for (const dirent of dirents.directories) {

@@ -1,7 +1,6 @@
 import { createEffect, createSignal } from 'solid-js'
 import { all } from '../constants/samples'
 import { extensionMap } from '~/format'
-import { currentExtension } from './fsStore'
 
 export const [editorRef, setEditorRef] = createSignal<HTMLDivElement>(null!)
 export const [code, setCode] = createSignal(all.repeat(2))
@@ -11,5 +10,4 @@ export const [currentColumn, setCurrentColumn] = createSignal(0)
 export const [currentSelection, setCurrentSelection] = createSignal('')
 export const [editorHight, setEditorHight] = createSignal(window.innerHeight)
 export const [isTsLoading, setIsTsLoading] = createSignal(false)
-export const isTs = () =>
-	extensionMap[currentExtension() as keyof typeof extensionMap] === 'typescript'
+export const [isGitLoading, setIsGitLoading] = createSignal(false)

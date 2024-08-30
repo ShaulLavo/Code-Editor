@@ -128,3 +128,7 @@
 	background-color: #00000000 !important;
 	border: none !important;
 }
+
+.cm-activeLineGutter {
+	color: var(--current-color) !important;
+}

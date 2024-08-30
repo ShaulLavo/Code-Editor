@@ -25,7 +25,7 @@ import {
 } from '~/components/ui/resizable'
 import { Editor } from './Editor'
 import { StatusBar } from './StatusBar'
-import { Xterm } from './Xterm'
+import { Terminal } from './Terminal'
 import { EditorTabs } from './components/EditorTabs'
 import { Header } from './components/Header'
 import { FileSystem } from './fileSystem/FileSystem'
@@ -38,20 +38,22 @@ import {
 	sanitizeFilePath,
 	traverseAndSetOpen
 } from './fileSystem/fileSystem.service'
-import {
-	currentPath,
-	fs,
-	loadTabData,
-	saveTabs,
-	setCurrentPath
-} from './stores/fsStore'
+
 import { currentBackground, currentColor, isDark } from './stores/themeStore'
 import './xterm.css'
 import { downloadNerdFont } from './utils/font'
 import { makePersisted, cookieStorage } from '@solid-primitives/storage'
-import { isTs } from './stores/editorStore'
-import { Formmater } from './format'
+import { Formmater, extensionMap, getConfigFromExt } from './format'
+import { editorFS } from './stores/fsStore'
 const App: Component = () => {
+	const {
+		currentPath,
+		fs,
+		loadTabData,
+		saveTabs,
+		setCurrentPath,
+		currentExtension
+	} = editorFS
 	const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
 		createSignal<number[]>([0.25, 0.75]),
 		{ name: 'horizontalPanelSize' }
@@ -70,25 +72,28 @@ const App: Component = () => {
 	const size = createElementSize(headerRef)
 
 	const [nodes, { refetch, mutate }] = createResource(() =>
-		getFileSystemStructure('root')
+		getFileSystemStructure('root', fs)
 	)
 
 	const fileMap = new ReactiveMap<string, string>()
 	createResource(() => loadTabData(fileMap))
-
+	const prettierConfig = () => getConfigFromExt(currentExtension())
 	const currentNode = () =>
 		nodes() ? findItem(currentPath(), nodes()!) : undefined
 	const dirPath = () =>
 		nodes() ? getFirstDirOrParent(currentPath(), nodes()!) : undefined
 
 	const filePath = () => (isFile(currentNode) ? currentPath() : undefined)
+	const isTs = () =>
+		extensionMap[currentExtension() as keyof typeof extensionMap] ===
+		'typescript'
 
 	const [code, { mutate: setCode }] = createResource(filePath, async path => {
 		if (!path) return ''
 		if (fileMap.has(path)) return fileMap.get(path)
 		let file = (await fs.readFile(sanitizeFilePath(path))) as string
 		if (isTs()) {
-			file = await Formmater.prettier(file)
+			file = await Formmater.prettier(file, prettierConfig())
 		}
 		fileMap.set(path, file)
 		try {
@@ -127,6 +132,10 @@ const App: Component = () => {
 					setCode={setCode}
 					refetch={refetch}
 					setHeaderRef={setHeaderRef}
+					currentExtension={currentExtension as () => string}
+					fs={fs}
+					clearTabs={editorFS.clearTabs}
+					setCurrentPath={setCurrentPath}
 				/>
 			</div>
 			<Resizable
@@ -147,7 +156,11 @@ const App: Component = () => {
 					class="overflow-x-hidden"
 					initialSize={horizontalPanelSize()?.[0]}
 				>
-					<FileSystem traversedNodes={traversedNodes} />
+					<FileSystem
+						traversedNodes={traversedNodes}
+						currentPath={currentPath}
+						setCurrentPath={setCurrentPath}
+					/>
 				</ResizablePanel>
 				<ResizableHandle class={isDark() ? ' bg-gray-800' : 'bg-gray-200'} />
 				<ResizablePanel
@@ -178,7 +191,15 @@ const App: Component = () => {
 									filePath={filePath}
 									setCurrentPath={setCurrentPath}
 								/>
-								<Editor code={code} setCode={setCode} size={editorSize} />
+								<Editor
+									code={code}
+									setCode={setCode}
+									size={editorSize}
+									currentExtension={currentExtension}
+									currentPath={currentPath}
+									prettierConfig={prettierConfig}
+									isTs={isTs}
+								/>
 							</div>
 						</ResizablePanel>
 						<ResizableHandle
@@ -188,7 +209,7 @@ const App: Component = () => {
 							class="overflow-hidden"
 							initialSize={verticalPanelSize()[1]}
 						>
-							<Xterm dirPath={dirPath} />
+							<Terminal dirPath={dirPath} />
 						</ResizablePanel>
 					</Resizable>
 				</ResizablePanel>
@@ -199,7 +220,7 @@ const App: Component = () => {
 				setCurrentPath={setCurrentPath}
 			/>
 			<Editor code={code} setCode={setCode} /> */}
-			<StatusBar />
+			<StatusBar isTs={isTs} />
 		</main>
 	)
 }

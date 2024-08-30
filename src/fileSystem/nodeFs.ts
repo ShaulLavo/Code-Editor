@@ -1,32 +1,27 @@
-import { fs } from '~/stores/fsStore'
+import { ICreateFsOutput } from 'indexeddb-fs'
+import { createLoggingProxy } from '~/utils/worker'
 
-const NodeFs = {
+const NodeFs = (fs: ICreateFsOutput) => ({
 	async mkdir(path: string, mode?: any) {
 		await fs.createDirectory(path)
 	},
-
 	async rmdir(path: string) {
 		await fs.removeDirectory(path)
 	},
-
 	async readFile(path: string, options?: any) {
 		const content = await fs.readFile(path)
 		return content
 	},
-
 	async writeFile(file: string, data: string, options?: any) {
 		await fs.writeFile(file, data)
 	},
-
 	async unlink(path: string) {
 		await fs.removeFile(path)
 	},
-
 	async readdir(path: string, options?: any) {
 		const { files } = await fs.readDirectory(path)
 		return files
 	},
-
 	async stat(path: string, options?: any) {
 		const isFile = await fs.isFile(path)
 		return {
@@ -34,7 +29,6 @@ const NodeFs = {
 			isDirectory: () => !isFile
 		}
 	},
-
 	async lstat(path: string, options?: any) {
 		return this.stat(path, options)
 	},
@@ -42,7 +36,7 @@ const NodeFs = {
 	async rm(path: string, options?: { recursive?: boolean }) {
 		await fs.remove(path)
 	}
-}
+})
 
 export default NodeFs
 
@@ -52,7 +46,7 @@ enum FileType {
 	UNKNOWN = 'unknown'
 }
 
-const NodeFsAdapter = {
+const NodeFsAdapter = (fs: ICreateFsOutput) => ({
 	...NodeFs,
 
 	async getType(path: string): Promise<FileType> {
@@ -88,6 +82,5 @@ const NodeFsAdapter = {
 	async writeFile(path: string, data: string): Promise<void> {
 		await fs.writeFile(path, data)
 	}
-}
-
+})
 export { NodeFsAdapter }

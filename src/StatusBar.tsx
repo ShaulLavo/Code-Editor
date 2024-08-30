@@ -1,4 +1,4 @@
-import { Accessor, For, createSignal } from 'solid-js'
+import { Accessor, Component, For, createSignal } from 'solid-js'
 import { currentBackground, currentColor } from './stores/themeStore'
 import { createContext } from 'solid-js'
 
@@ -7,10 +7,12 @@ import {
 	currentColumn,
 	currentLine,
 	currentSelection,
-	isTs,
+	isGitLoading,
 	isTsLoading
 } from './stores/editorStore'
+
 import { Spinner, SpinnerType } from 'solid-spinner'
+import { GitIcon } from './components/GitIcon'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -40,12 +42,15 @@ export const DefaultDescription = (props: { description: string }) => {
 // export const StatusBarCtx = createContext<HoverCardContext>(value)
 
 interface Status {
-	title: string
+	title: string | Component
 	description?: string
 	isLoading: boolean
 }
 
-export const StatusBar = () => {
+interface StatusBarProps {
+	isTs: Accessor<boolean>
+}
+export const StatusBar: Component<StatusBarProps> = ({ isTs }) => {
 	const selcetionLength = () =>
 		currentSelection().length > 0
 			? `(${currentSelection().length} selected)`
@@ -62,6 +67,15 @@ export const StatusBar = () => {
 				title: `${isTs() ? 'TypeScript' : ''}`,
 				// description: 'Go to Line/Column',
 				isLoading: isTs() && isTsLoading()
+			},
+			{
+				title: 'Git',
+				description: 'File Encoding',
+				isLoading: isGitLoading()
+			},
+			{
+				title: () => <></>,
+				isLoading: false
 			}
 		] satisfies Status[]
 
@@ -84,12 +98,21 @@ export const StatusBar = () => {
 								/>
 							) : status.description ? (
 								<HoverCard
-									trigger={<span>{status.title}</span>}
+									trigger={
+										typeof status.title === 'function' ? (
+											//@ts-ignore
+											<status.title />
+										) : (
+											<span>{status.title}</span>
+										)
+									}
 									caredContent={status.description}
 									hasArrow
 									gap={4}
 									// Context={StatusBarCtx}
 								/>
+							) : typeof status.title === 'function' ? (
+								<status.title />
 							) : (
 								<span>{status.title}</span>
 							)}

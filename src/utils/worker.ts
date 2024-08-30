@@ -10,7 +10,7 @@ type Worker = WorkerShape &
 		close: () => void
 	}
 
-function createLoggingProxy<T extends {}>(target: T): T {
+export function createLoggingProxy<T extends {}>(target: T): T {
 	return new Proxy(target, {
 		get(target, prop, receiver) {
 			const originalMethod = Reflect.get(target, prop, receiver)

@@ -1,6 +1,6 @@
 import { makePersisted } from '@solid-primitives/storage'
 
-import { createSignal } from 'solid-js'
+import { createEffect, createSignal } from 'solid-js'
 import {
 	baseColors,
 	poimandres,
@@ -182,6 +182,15 @@ const termColors = () => ({
 	color1: currentThemeSettings().color1,
 	color2: currentThemeSettings().color2
 })
+
+createEffect(() => {
+	document.documentElement.style.setProperty('--current-color', currentColor())
+	document.documentElement.style.setProperty(
+		'--current-background',
+		currentBackground()
+	)
+})
+
 export {
 	currentBackground,
 	currentColor,

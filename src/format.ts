@@ -7,7 +7,6 @@ import { js_beautify } from 'js-beautify'
 import { createSignal } from 'solid-js'
 import { BuiltInParserName, Options } from 'prettier'
 import ts from 'typescript'
-import { currentExtension } from './stores/fsStore'
 const deafultConfig = {
 	typescript: {
 		parser: 'typescript',
@@ -37,16 +36,14 @@ export const extensionMap = {
 	jsx: 'typescript'
 } as const
 
-const getConfigFromExt = (extension?: string) => {
+export const getConfigFromExt = (extension?: string) => {
 	const parser =
 		extensionMap[extension as keyof typeof extensionMap] ?? 'typescript'
 	return deafultConfig[parser]
 }
 
-const currentConfig = () => getConfigFromExt(currentExtension())
-
 export const Formmater = {
-	async prettier(code: string, config: Options = currentConfig()) {
+	async prettier(code: string, config: Options) {
 		try {
 			if (!code) return code
 			return await prettier(code, config)

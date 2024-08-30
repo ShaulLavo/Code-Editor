@@ -1,4 +1,11 @@
-import { Accessor, Resource, createEffect, createMemo, on } from 'solid-js'
+import {
+	Accessor,
+	Resource,
+	Setter,
+	createEffect,
+	createMemo,
+	on
+} from 'solid-js'
 import { EditorView } from '@codemirror/view'
 
 /**
@@ -8,7 +15,9 @@ import { EditorView } from '@codemirror/view'
  */
 export function createEditorControlledValue(
 	view: Accessor<EditorView | undefined>,
-	code: Accessor<string> | Resource<string | undefined>
+	code: Accessor<string> | Resource<string | undefined>,
+	skipSync: Accessor<boolean> = () => false,
+	setSkipSync: Setter<boolean> = () => {}
 ): void {
 	const memoizedCode = createMemo(code)
 
@@ -17,6 +26,10 @@ export function createEditorControlledValue(
 			if (!view) return
 			createEffect(
 				on(memoizedCode, code => {
+					if (skipSync()) {
+						setSkipSync(false)
+						return
+					}
 					const localValue = view?.state.doc.toString()
 					// if (localValue.length === code?.length) {
 					// 	return

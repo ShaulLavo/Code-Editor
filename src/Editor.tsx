@@ -14,6 +14,7 @@ import {
 	drawSelection,
 	gutter,
 	highlightActiveLine,
+	highlightActiveLineGutter,
 	highlightSpecialChars,
 	keymap,
 	lineNumbers,
@@ -45,7 +46,6 @@ import { useShortcuts } from './hooks/useShortcuts'
 import {
 	editorHight,
 	editorRef,
-	isTs,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
@@ -60,11 +60,10 @@ import { defaultKeymap } from './utils/keymap'
 import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
 import ts from 'typescript'
-import { currentExtension, currentPath } from './stores/fsStore'
 import { initTsWorker } from './utils/worker'
-import 'neofetch'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
+import { Options } from 'prettier'
 
 export interface EditorProps {
 	code: Accessor<string> | Resource<string | undefined>
@@ -72,6 +71,10 @@ export interface EditorProps {
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
+	currentExtension: Accessor<string | undefined>
+	currentPath: Accessor<string>
+	prettierConfig: Accessor<Options>
+	isTs: Accessor<boolean>
 }
 
 export const Editor = ({
@@ -79,11 +82,16 @@ export const Editor = ({
 	setCode,
 	defaultTheme,
 	formatOnMount,
-	size
+	size,
+	currentExtension,
+	currentPath,
+	prettierConfig,
+	isTs
 }: EditorProps) => {
-	useShortcuts(code, setCode)
+	useShortcuts(code, setCode, currentExtension)
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
+	const [skipSync, setSkipSync] = createSignal(false)
 	let worker: WorkerShape & Remote<ts.System> & { close: () => void } = null!
 	const start = performance.now()
 	const setupEditor = () => {
@@ -104,7 +112,8 @@ export const Editor = ({
 			javascript({ jsx: true, typescript: true }),
 			foldGutter({}),
 			bracketMatching(),
-			rainbowBrackets()
+			rainbowBrackets(),
+			highlightActiveLineGutter()
 		] as Extension[]
 		const editorState = EditorState.create({
 			doc: code(),
@@ -117,7 +126,6 @@ export const Editor = ({
 			dispatch: (transaction, view) => {
 				view.update([transaction])
 
-				transaction.state.facet
 				batch(() => {
 					const { state } = view
 					const { selection, doc } = state
@@ -129,8 +137,9 @@ export const Editor = ({
 					setCurrentSelection(selectionText)
 					setCurrentLine(line.number)
 					setCurrentColumn(main.head - line.from)
-					setCode(doc.toString())
 					setEditorHight(Math.max(doc.lines * 13, 13))
+					setCode(doc.toString())
+					setSkipSync(true)
 				})
 			}
 		})
@@ -148,14 +157,14 @@ export const Editor = ({
 	}
 
 	const formatCode = async () => {
-		const formatted = await formatter()(code()!)
+		const formatted = await formatter()(code()!, prettierConfig())
 		setCode(formatted)
 	}
 
 	const createExtention = (extention: Accessor<Extension>) =>
 		createCompartmentExtension(extention, editorView)
 
-	createEditorControlledValue(editorView, code)
+	createEditorControlledValue(editorView, code, skipSync, setSkipSync)
 	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
 	createExtention(currentTheme)
 	createExtention(() =>
@@ -195,7 +204,7 @@ export const Editor = ({
 		initTsWorker(async tsWorker => {
 			worker = tsWorker
 			console.log(Object.keys(worker))
-			console.log(await worker.directoryExists(''))
+			// console.log(await worker.directoryExists(''))
 			setIsWorkerReady(true)
 		})
 	})

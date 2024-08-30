@@ -1,6 +1,13 @@
 import { VsChevronRight, VsFile, VsFolder } from 'solid-icons/vs'
-import { For, Show, batch, createEffect, createSignal } from 'solid-js'
-import { currentPath, setCurrentPath } from '~/stores/fsStore'
+import {
+	Accessor,
+	For,
+	Setter,
+	Show,
+	batch,
+	createEffect,
+	createSignal
+} from 'solid-js'
 import { currentColor, isDark } from '~/stores/themeStore'
 import { Node, isFolder } from './fileSystem.service'
 import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
@@ -16,9 +23,16 @@ declare module 'solid-js' {
 interface FilesystemItemProps {
 	node: Node
 	fullPath?: string
+	currentPath: Accessor<string>
+	setCurrentPath: Setter<string>
 }
 
-export function FilesystemItem({ node, fullPath = '' }: FilesystemItemProps) {
+export function FilesystemItem({
+	node,
+	fullPath = '',
+	currentPath,
+	setCurrentPath
+}: FilesystemItemProps) {
 	const [isOpen, setIsOpen] = createSignal(isFolder(node) ? node.isOpen : false)
 	const thisPath = `${fullPath}/${node.name}`
 
@@ -71,7 +85,12 @@ export function FilesystemItem({ node, fullPath = '' }: FilesystemItemProps) {
 				<AutoAnimeListContainer class="pl-6">
 					<For each={isFolder(node) && node.nodes}>
 						{childNode => (
-							<FilesystemItem node={childNode} fullPath={thisPath} />
+							<FilesystemItem
+								node={childNode}
+								fullPath={thisPath}
+								setCurrentPath={setCurrentPath}
+								currentPath={currentPath}
+							/>
 						)}
 					</For>
 				</AutoAnimeListContainer>

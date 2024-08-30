@@ -6,9 +6,15 @@ import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
 
 interface FileSystemProps {
 	traversedNodes: () => Node[]
+	currentPath: Accessor<string>
+	setCurrentPath: Setter<string>
 }
 
-export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
+export const FileSystem: Component<FileSystemProps> = ({
+	traversedNodes,
+	currentPath,
+	setCurrentPath
+}) => {
 	let container: HTMLUListElement = null!
 	return (
 		<div class="h-screen">
@@ -17,7 +23,13 @@ export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
 				<Suspense fallback={'loading...'}>
 					<AutoAnimeListContainer ref={container}>
 						<For each={traversedNodes()}>
-							{node => <FilesystemItem node={node} />}
+							{node => (
+								<FilesystemItem
+									node={node}
+									currentPath={currentPath}
+									setCurrentPath={setCurrentPath}
+								/>
+							)}
 						</For>
 					</AutoAnimeListContainer>
 				</Suspense>
