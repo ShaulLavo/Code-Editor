@@ -13,19 +13,19 @@ import { compilerOptions } from '../constants/constants'
 
 let storage: Awaited<ReturnType<typeof createWorkerStorage>>
 let system: ts.System = null!
-storage = await createWorkerStorage()
-const fsMap = await createDefaultMapFromCDN(
-	compilerOptions,
-	ts.version,
-	true,
-	ts,
-	lzstring,
-	undefined,
-	storage
-)
-system = createSystem(fsMap)
-const worker = createWorker(() =>
-	createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
-)
+const worker = createWorker(async () => {
+	storage = await createWorkerStorage()
+	const fsMap = await createDefaultMapFromCDN(
+		compilerOptions,
+		ts.version,
+		true,
+		ts,
+		lzstring,
+		undefined,
+		storage
+	)
+	system = createSystem(fsMap)
+	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
+})
 Comlink.expose({ ...worker, ...system })
 self.postMessage('ready')
