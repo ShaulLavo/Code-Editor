@@ -45,6 +45,7 @@ import { downloadNerdFont } from './utils/font'
 import { makePersisted, cookieStorage } from '@solid-primitives/storage'
 import { Formmater, extensionMap, getConfigFromExt } from './format'
 import { editorFS } from './stores/fsStore'
+
 const App: Component = () => {
 	const {
 		currentPath,
@@ -103,7 +104,7 @@ const App: Component = () => {
 		}
 		return file
 	})
-
+	const currentFile = () => fileMap.get(currentPath())
 	const traversedNodes = createMemo(() =>
 		nodes.loading
 			? []
@@ -206,7 +207,7 @@ const App: Component = () => {
 							class={isDark() ? ' bg-gray-800' : 'bg-blue-200'}
 						/>
 						<ResizablePanel
-							class="overflow-hidden"
+							class="overflow-hidden p-2"
 							initialSize={verticalPanelSize()[1]}
 						>
 							<Terminal dirPath={dirPath} />

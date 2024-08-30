@@ -15,7 +15,10 @@ import { EditorView } from '@codemirror/view'
  */
 export function createEditorControlledValue(
 	view: Accessor<EditorView | undefined>,
-	code: Accessor<string> | Resource<string | undefined>,
+	code:
+		| Accessor<string>
+		| Resource<string | undefined>
+		| (() => string | undefined),
 	skipSync: Accessor<boolean> = () => false,
 	setSkipSync: Setter<boolean> = () => {}
 ): void {

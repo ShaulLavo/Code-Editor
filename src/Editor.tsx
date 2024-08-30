@@ -30,6 +30,7 @@ import {
 import { type WorkerShape } from '@valtown/codemirror-ts/worker'
 import {
 	Accessor,
+	For,
 	Resource,
 	Setter,
 	batch,
@@ -66,8 +67,11 @@ import rainbowBrackets from 'rainbowbrackets'
 import { Options } from 'prettier'
 
 export interface EditorProps {
-	code: Accessor<string> | Resource<string | undefined>
-	setCode: Setter<string | undefined>
+	code:
+		| Accessor<string>
+		| Resource<string | undefined>
+		| (() => string | undefined)
+	setCode: Setter<string | undefined> | ((code: string) => void)
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
@@ -155,6 +159,11 @@ export const Editor = ({
 
 		return view
 	}
+	const parsePathToButtons = (path: string) => {
+		const parts = path.split('/').filter(part => part !== '')
+
+		return parts
+	}
 
 	const formatCode = async () => {
 		const formatted = await formatter()(code()!, prettierConfig())
@@ -208,9 +217,28 @@ export const Editor = ({
 			setIsWorkerReady(true)
 		})
 	})
-
+	createEffect(() => {
+		console.log(currentPath())
+	})
+	const buttons = () => parsePathToButtons(currentPath())
 	return (
 		<>
+			<div>
+				<For each={buttons()}>
+					{(part, index) => (
+						<span>
+							{' '}
+							<button
+								onClick={() => {
+									/* noop */
+								}}
+							>
+								{part + (index() === buttons().length - 1 ? '' : ' >')}
+							</button>{' '}
+						</span>
+					)}
+				</For>
+			</div>
 			<div
 				id="editor"
 				class="w-full"

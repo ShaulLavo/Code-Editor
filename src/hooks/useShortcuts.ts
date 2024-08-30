@@ -3,8 +3,11 @@ import { Accessor, Resource, Setter, createEffect } from 'solid-js'
 import { formatter, getConfigFromExt } from '../format'
 
 export const useShortcuts = (
-	code: Accessor<string> | Resource<string | undefined>,
-	setCode: Setter<string | undefined>,
+	code:
+		| Accessor<string>
+		| Resource<string | undefined>
+		| (() => string | undefined),
+	setCode: Setter<string | undefined> | ((code: string) => void),
 	extension: Accessor<string | undefined>
 ) => {
 	createShortcut(

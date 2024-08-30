@@ -9,7 +9,9 @@ import {
 	createSignal,
 	on,
 	onMount,
-	type Component
+	type Component,
+	createResource,
+	Resource
 } from 'solid-js'
 import { Readline } from 'xterm-readline'
 import { Node } from './fileSystem/fileSystem.service'
@@ -30,10 +32,10 @@ import { setIsGitLoading } from './stores/editorStore'
 const createBrowserFS = async () => {
 	await configure({
 		mounts: {
-			'/': IndexedDB
+			'/git': IndexedDB
 		}
 	})
-	return bFs
+	return bFs.promises
 }
 
 async function cd(filesystem: any, path: string): Promise<void> {
@@ -60,6 +62,7 @@ async function cd(filesystem: any, path: string): Promise<void> {
 		} else {
 			newPath = path
 		}
+		console.log(newPath)
 		newPath = resolvePath(newPath)
 	}
 
@@ -133,8 +136,14 @@ async function cp(source: string, destination: string): Promise<void> {
 }
 
 function resolvePath(path: string): string {
+	if (path === '/') {
+		return 'root'
+	}
 	if (path.endsWith('/')) {
-		return path.slice(0, -1)
+		path = path.slice(0, -1)
+	}
+	if (path.startsWith('/')) {
+		path = path.slice(1)
 	}
 	return path
 }
@@ -150,22 +159,38 @@ async function typeEffect(rl: any, text: string, delay: number = 100) {
 	}
 	rl.write('\r\n')
 }
-
-// console.log(git)
-async function clone() {
-	return await git.clone({
-		fs: { promises: await createBrowserFS() },
-		http,
-		dir: 'root',
-		corsProxy: 'https://cors.isomorphic-git.org',
-		url: 'https://github.com/isomorphic-git/isomorphic-git',
-		ref: 'main',
-		singleBranch: true,
-		depth: 1
-	})
+async function clone(gitFs: Resource<typeof bFs.promises>) {
+	if (gitFs.loading) return
+	try {
+		await git.clone({
+			fs: gitFs()!,
+			http,
+			dir: '/',
+			corsProxy: 'https://cors.isomorphic-git.org',
+			url: 'https://github.com/ShaulLavo/Code-Editor.git',
+			ref: 'main',
+			singleBranch: true,
+			depth: 1
+		})
+	} catch (e) {
+		console.log(e)
+	}
 }
-
+async function log(gitFs: Resource<typeof bFs.promises>) {
+	if (gitFs.loading) return
+	try {
+		const commits = await git.log({ fs: gitFs()!, dir: '/' })
+		console.log(commits)
+	} catch (e) {
+		console.log(e)
+	}
+}
+async function init(gitFs: Resource<typeof bFs.promises>) {
+	await git.init({ fs: gitFs()!, dir: '/' })
+}
 export const Terminal: Component<XtermProps> = () => {
+	const [gitFs] = createResource(createBrowserFS)
+
 	const [ref, setRef] = createSignal<HTMLDivElement>(null!)
 	const term = new Xterm({
 		cursorBlink: true,
@@ -210,7 +235,13 @@ export const Terminal: Component<XtermProps> = () => {
 				if (args._[0] === 'clone') {
 					console.log('clone :)')
 					setIsGitLoading(true)
-					console.log(await clone())
+					console.log(await clone(gitFs))
+					setIsGitLoading(false)
+				}
+				if (args._[0] === 'log') {
+					console.log('log :)')
+					setIsGitLoading(true)
+					console.log(await log(gitFs))
 					setIsGitLoading(false)
 				}
 			}

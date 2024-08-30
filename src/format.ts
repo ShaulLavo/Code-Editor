@@ -37,15 +37,15 @@ export const extensionMap = {
 } as const
 
 export const getConfigFromExt = (extension?: string) => {
-	const parser =
-		extensionMap[extension as keyof typeof extensionMap] ?? 'typescript'
+	const parser = extensionMap[extension as keyof typeof extensionMap]
+
 	return deafultConfig[parser]
 }
 
 export const Formmater = {
 	async prettier(code: string, config: Options) {
 		try {
-			if (!code) return code
+			if (!code || !config) return code
 			return await prettier(code, config)
 		} catch (e) {
 			console.log(e)
