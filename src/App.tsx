@@ -11,7 +11,6 @@
 import { ReactiveMap } from '@solid-primitives/map'
 import { createElementSize } from '@solid-primitives/resize-observer'
 import {
-	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
@@ -34,17 +33,16 @@ import {
 	getFileSystemStructure,
 	getFirstDirOrParent,
 	isFile,
-	isFolder,
 	sanitizeFilePath,
 	traverseAndSetOpen
 } from './fileSystem/fileSystem.service'
 
-import { currentBackground, currentColor, isDark } from './stores/themeStore'
-import './xterm.css'
-import { downloadNerdFont } from './utils/font'
-import { makePersisted, cookieStorage } from '@solid-primitives/storage'
+import { makePersisted } from '@solid-primitives/storage'
 import { Formmater, extensionMap, getConfigFromExt } from './format'
 import { editorFS } from './stores/fsStore'
+import { currentBackground, currentColor, isDark } from './stores/themeStore'
+import './xterm.css'
+import { setSkipSync } from './stores/editorStore'
 
 const App: Component = () => {
 	const {
@@ -90,8 +88,12 @@ const App: Component = () => {
 		'typescript'
 
 	const [code, { mutate: setCode }] = createResource(filePath, async path => {
+		setSkipSync(false)
 		if (!path) return ''
-		if (fileMap.has(path)) return fileMap.get(path)
+		if (fileMap.has(path)) {
+			console.log(fileMap.get(path))
+			return fileMap.get(path)
+		}
 		let file = (await fs.readFile(sanitizeFilePath(path))) as string
 		if (isTs()) {
 			file = await Formmater.prettier(file, prettierConfig())

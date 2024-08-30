@@ -53,7 +53,9 @@ import {
 	setEditorHight,
 	setEditorRef,
 	setIsTsLoading,
-	showLineNumber
+	setSkipSync,
+	showLineNumber,
+	skipSync
 } from './stores/editorStore'
 import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
 import { defaultKeymap } from './utils/keymap'
@@ -95,7 +97,6 @@ export const Editor = ({
 	useShortcuts(code, setCode, currentExtension)
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
-	const [skipSync, setSkipSync] = createSignal(false)
 	let worker: WorkerShape & Remote<ts.System> & { close: () => void } = null!
 	const start = performance.now()
 	const setupEditor = () => {
