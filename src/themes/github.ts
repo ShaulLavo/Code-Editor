@@ -149,3 +149,21 @@ export const xTermGithubDarkTheme = {
 	brightWhite: '#d2a8ff',
 	extendedAnsi: ['#ffeef0']
 }
+export const githubLightBracketColors = {
+	red: xTermGithubLightTheme.red,
+	orange: xTermGithubLightTheme.yellow,
+	yellow: xTermGithubLightTheme.brightYellow,
+	green: xTermGithubLightTheme.green,
+	blue: xTermGithubLightTheme.blue,
+	indigo: xTermGithubLightTheme.brightBlue,
+	violet: xTermGithubLightTheme.magenta
+}
+export const githubDarkBracketColors = {
+	red: xTermGithubDarkTheme.red,
+	orange: xTermGithubDarkTheme.yellow,
+	yellow: xTermGithubDarkTheme.brightYellow,
+	green: xTermGithubDarkTheme.green,
+	blue: xTermGithubDarkTheme.blue,
+	indigo: xTermGithubDarkTheme.brightBlue,
+	violet: xTermGithubDarkTheme.magenta
+}

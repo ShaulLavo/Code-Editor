@@ -2,15 +2,52 @@ import { VsChevronRight, VsFile, VsFolder } from 'solid-icons/vs'
 import {
 	Accessor,
 	For,
+	JSX,
 	Setter,
 	Show,
 	batch,
 	createEffect,
-	createSignal
+	createResource,
+	createSignal,
+	lazy,
+	useContext
 } from 'solid-js'
 import { currentColor, isDark } from '~/stores/themeStore'
 import { Node, isFolder } from './fileSystem.service'
 import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
+import { EditorFSContext } from '~/context/FsContext'
+import react_ts from '~/assets/icons/react_ts.svg'
+import react from '~/assets/icons/react.svg'
+import typescript from '~/assets/icons/typescript.svg'
+import javascript from '~/assets/icons/javascript.svg'
+import python from '~/assets/icons/python.svg'
+import ruby from '~/assets/icons/ruby.svg'
+import java from '~/assets/icons/java.svg'
+import php from '~/assets/icons/php.svg'
+import html from '~/assets/icons/html.svg'
+import css from '~/assets/icons/css.svg'
+import sass from '~/assets/icons/sass.svg'
+import json from '~/assets/icons/json.svg'
+import xml from '~/assets/icons/xml.svg'
+import yaml from '~/assets/icons/yaml.svg'
+import docker from '~/assets/icons/docker.svg'
+import shell from '~/assets/icons/shell.svg'
+import typescript_def from '~/assets/icons/typescript-def.svg'
+import cpp from '~/assets/icons/cpp.svg'
+import csharp from '~/assets/icons/csharp.svg'
+import go from '~/assets/icons/go.svg'
+import rust from '~/assets/icons/rust.svg'
+import perl from '~/assets/icons/perl.svg'
+import markdown from '~/assets/icons/markdown.svg'
+import swift from '~/assets/icons/swift.svg'
+import git from '~/assets/icons/git.svg'
+import image from '~/assets/icons/image.svg'
+import document from '~/assets/icons/document.svg'
+import folder_base from '~/assets/icons/folder-base.svg'
+import folder_base_open from '~/assets/icons/folder-base-open.svg'
+//@ts-ignore
+
+const icons = window.FileIcons
 
 declare module 'solid-js' {
 	namespace JSX {
@@ -23,27 +60,101 @@ declare module 'solid-js' {
 interface FilesystemItemProps {
 	node: Node
 	fullPath?: string
-	currentPath: Accessor<string>
-	setCurrentPath: Setter<string>
+	fontSize?: number
+}
+const fileExtIconMap = {
+	tsx: react_ts,
+	jsx: react,
+	ts: typescript,
+	js: javascript,
+	py: python,
+	rb: ruby,
+	java: java,
+	php: php,
+	html: html,
+	css: css,
+	scss: sass,
+	json: json,
+	xml: xml,
+	yaml: yaml,
+	dockerfile: docker,
+	sh: shell,
+	'd.ts': typescript_def,
+	cpp: cpp,
+	cs: csharp,
+	go: go,
+	rs: rust,
+	pl: perl,
+	md: markdown,
+	swift: swift,
+	gitignore: git,
+	document,
+	png: image,
+	jpg: image,
+	jpeg: image,
+	svg: image,
+	gif: image,
+	webp: image,
+	ico: image,
+	bmp: image,
+	tiff: image,
+	tif: image,
+	heic: image,
+	heif: image
 }
 
-export function FilesystemItem({
-	node,
-	fullPath = '',
-	currentPath,
-	setCurrentPath
-}: FilesystemItemProps) {
-	const [isOpen, setIsOpen] = createSignal(isFolder(node) ? node.isOpen : false)
-	const thisPath = `${fullPath}/${node.name}`
+const dirNameIconMap = {
+	base: folder_base,
+	'base-open': folder_base_open
+}
 
-	const handleClick = () =>
+export function FilesystemItem(props: FilesystemItemProps) {
+	const [isOpen, setIsOpen] = createSignal(
+		isFolder(props.node) ? props.node.isOpen : false
+	)
+	const thisPath = `${props.fullPath ?? 'root'}/${props.node.name}`
+	const { currentPath, setCurrentPath } = useContext(EditorFSContext)
+	const ext = () => props.node.name.split('.').pop()
+	//@ts-ignore
+	const filePath = () => fileExtIconMap[ext()]
+	const fileIcon = () => {
+		if (filePath()) {
+			return (
+				<img src={filePath()} width={props.fontSize} height={props.fontSize} />
+			)
+		}
+		return (
+			<img
+				src={fileExtIconMap['document']}
+				width={props.fontSize}
+				height={props.fontSize}
+			/>
+		)
+	}
+	const folderIcon = () =>
+		isOpen() ? (
+			<img
+				src={dirNameIconMap['base-open']}
+				width={props.fontSize}
+				height={props.fontSize}
+			/>
+		) : (
+			<img
+				src={dirNameIconMap['base']}
+				width={props.fontSize}
+				height={props.fontSize}
+			/>
+		)
+	const handleClick = () => {
+		console.log('thisPath', thisPath)
 		batch(() => {
-			if (isFolder(node) && node.nodes.length > 0) {
+			if (isFolder(props.node) && props.node.nodes.length > 0) {
 				setIsOpen(!isOpen())
 				return
 			}
 			setCurrentPath(thisPath)
 		})
+	}
 
 	createEffect(() => {
 		if (currentPath().startsWith(thisPath)) {
@@ -51,46 +162,31 @@ export function FilesystemItem({
 		}
 	})
 	return (
-		<li class="">
-			<span>
-				<span
-					class={`flex items-center gap-1.5 py-1 px-2 rounded ${
-						currentPath() === thisPath
-							? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20 font-bold text-xs`
-							: 'text-gray-600 text-xs'
-					} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
-					onClick={handleClick}
-				>
-					{isFolder(node) && node.nodes.length > 0 && (
-						<button class="p-1 -m-1">
-							<VsChevronRight
-								class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
-							/>
-						</button>
-					)}
-
-					{isFolder(node) ? (
-						<VsFolder
-							class={`size-4 ${
-								node.nodes.length === 0 ? 'ml-[22px]' : currentColor()
-							}`}
+		<li>
+			<span
+				style={{ 'font-size': `${props.fontSize}px` }}
+				class={`flex items-center gap-1.5 py-1 px-2 rounded ${
+					currentPath() === thisPath
+						? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20 font-bold text-xs`
+						: 'text-gray-600 text-xs'
+				} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
+				onClick={handleClick}
+			>
+				{isFolder(props.node) && props.node.nodes.length > 0 && (
+					<button class="p-1 -m-1">
+						<VsChevronRight
+							class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
 						/>
-					) : (
-						<VsFile class={`ml-[22px] size-4`} />
-					)}
-					{node.name}
-				</span>
+					</button>
+				)}
+				{isFolder(props.node) ? folderIcon() : fileIcon()}
+				{props.node.name}
 			</span>
 			<Show when={isOpen()}>
 				<AutoAnimeListContainer class="pl-6">
-					<For each={isFolder(node) && node.nodes}>
+					<For each={isFolder(props.node) && props.node.nodes}>
 						{childNode => (
-							<FilesystemItem
-								node={childNode}
-								fullPath={thisPath}
-								setCurrentPath={setCurrentPath}
-								currentPath={currentPath}
-							/>
+							<FilesystemItem {...props} node={childNode} fullPath={thisPath} />
 						)}
 					</For>
 				</AutoAnimeListContainer>

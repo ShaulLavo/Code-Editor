@@ -5,7 +5,7 @@ import { Dynamic, DynamicProps } from 'solid-js/web'
 export function AutoAnimeListContainer(
 	props: Partial<DynamicProps<ValidComponent>>
 ) {
-	const [animationParent] = createAutoAnimate()
+	const [animationParent] = createAutoAnimate({ duration: 100 })
 	return (
 		<Dynamic
 			{...props}

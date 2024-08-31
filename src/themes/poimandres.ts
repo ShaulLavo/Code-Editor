@@ -28,6 +28,15 @@ export const baseColors = {
 	black: '#000000',
 	transparent: '#00000000'
 }
+export const poimandresBracketColors = {
+	red: baseColors.hotRed,
+	orange: baseColors.brightYellow,
+	yellow: baseColors.brightMint,
+	green: baseColors.lowerMint,
+	blue: baseColors.lowerBlue,
+	indigo: baseColors.desaturatedBlue,
+	violet: baseColors.pink
+}
 
 export const poimandres = createTheme({
 	variant: 'dark',

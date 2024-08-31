@@ -81,3 +81,12 @@ export const xTermTokyoNightDayTheme = {
 	brightWhite: '#3760bf',
 	extendedAnsi: ['#5f5faf11']
 }
+export const tokyoNightDayBracketColors = {
+	red: xTermTokyoNightDayTheme.red,
+	orange: xTermTokyoNightDayTheme.yellow,
+	yellow: xTermTokyoNightDayTheme.brightYellow,
+	green: xTermTokyoNightDayTheme.green,
+	blue: xTermTokyoNightDayTheme.blue,
+	indigo: xTermTokyoNightDayTheme.brightBlue,
+	violet: xTermTokyoNightDayTheme.magenta
+}

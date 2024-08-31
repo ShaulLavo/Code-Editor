@@ -1,5 +1,7 @@
-import { For, Resource, type Component } from 'solid-js'
+import { For, Resource, batch, useContext, type Component } from 'solid-js'
 import ts from 'typescript'
+import { compilerOptions } from '~/constants/constants'
+import { EditorFSContext } from '~/context/FsContext'
 import { demoNodes, nextApp } from '../constants/demo/nodes'
 import {
 	createFileSystemStructure,
@@ -16,31 +18,23 @@ import {
 	themeSettings
 } from '../stores/themeStore'
 import { capitalizeFirstLetter } from '../utils/string'
-import { compilerOptions } from '~/constants/constants'
-import { Node } from '~/fileSystem/fileSystem.service'
-import { ICreateFsOutput } from 'indexeddb-fs'
+
 interface HeaderProps {
 	code: Resource<string | undefined>
 	setCode: (code: string) => void
 	setHeaderRef: (el: HTMLDivElement) => void
 	refetch: () => void
-	currentExtension: () => string
-	fs: ICreateFsOutput
-	clearTabs: () => Promise<void>
-	setCurrentPath(path: string): void
 }
 
 export const Header: Component<HeaderProps> = ({
 	code,
 	setCode,
 	refetch,
-	setHeaderRef,
-	currentExtension,
-	fs,
-	clearTabs,
-	setCurrentPath
+	setHeaderRef
 }) => {
 	let hasTitle = false
+	const { fs, currentExtension, setCurrentPath, clearTabs, fileMap } =
+		useContext(EditorFSContext)
 
 	return (
 		<div
@@ -110,10 +104,12 @@ export const Header: Component<HeaderProps> = ({
 				style={{
 					color: currentColor()
 				}}
-				onMouseDown={() =>
-					code() !== undefined &&
-					setCode(ts.transpileModule(code()!, { compilerOptions }).outputText)
-				}
+				onMouseDown={() => {
+					if (code() == undefined) return
+					batch(() => {
+						setCode(ts.transpileModule(code()!, { compilerOptions }).outputText)
+					})
+				}}
 			>
 				Transpile
 			</button>{' '}
@@ -121,7 +117,7 @@ export const Header: Component<HeaderProps> = ({
 			<button
 				onMouseDown={async () => {
 					await deleteAll('root', fs)
-					await clearTabs()
+					await clearTabs(fileMap)
 					setCurrentPath('')
 					refetch()
 				}}

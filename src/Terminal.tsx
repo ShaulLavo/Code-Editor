@@ -28,6 +28,12 @@ const { setCurrentPath, currentPath, fs } = terminalFS
 import { configure, InMemory, fs as bFs } from '@zenfs/core'
 import { IndexedDB } from '@zenfs/dom'
 import { setIsGitLoading } from './stores/editorStore'
+import { createInnerZoom } from './hooks/createInnerZoom'
+import {
+	NullableSize,
+	createElementSize
+} from '@solid-primitives/resize-observer'
+import { size } from '@floating-ui/core'
 
 const createBrowserFS = async () => {
 	await configure({
@@ -62,7 +68,6 @@ async function cd(filesystem: any, path: string): Promise<void> {
 		} else {
 			newPath = path
 		}
-		console.log(newPath)
 		newPath = resolvePath(newPath)
 	}
 
@@ -148,14 +153,11 @@ function resolvePath(path: string): string {
 	return path
 }
 
-interface XtermProps {
-	dirPath: Accessor<Node | undefined>
-}
-
 async function typeEffect(rl: any, text: string, delay: number = 100) {
 	for (let i = 0; i < text.length; i++) {
 		rl.write(text.charAt(i))
-		await new Promise(resolve => setTimeout(resolve, delay))
+		const randomDelay = delay + Math.floor(Math.random() * 50 - 25) // Adding randomness to the delay
+		await new Promise(resolve => setTimeout(resolve, randomDelay))
 	}
 	rl.write('\r\n')
 }
@@ -188,7 +190,12 @@ async function log(gitFs: Resource<typeof bFs.promises>) {
 async function init(gitFs: Resource<typeof bFs.promises>) {
 	await git.init({ fs: gitFs()!, dir: '/' })
 }
-export const Terminal: Component<XtermProps> = () => {
+
+interface XtermProps {
+	size: Readonly<NullableSize>
+}
+
+export const Terminal: Component<XtermProps> = props => {
 	const [gitFs] = createResource(createBrowserFS)
 
 	const [ref, setRef] = createSignal<HTMLDivElement>(null!)
@@ -202,9 +209,17 @@ export const Terminal: Component<XtermProps> = () => {
 	const fitAddon = new FitAddon()
 	const searchAddon = new SearchAddon()
 	const clipboardAddon = new ClipboardAddon()
-
+	const { fontSize, percentChange } = createInnerZoom({
+		ref: ref,
+		key: 'terminal',
+		sync(fontSize) {
+			term.options.fontSize = fontSize
+			term.refresh(0, term.rows - 1)
+		}
+	})
 	onMount(async () => {
 		term.open(ref())
+
 		term.loadAddon(rl)
 		rl.setCheckHandler(text => {
 			let trimmedText = text.trimEnd()
@@ -222,35 +237,18 @@ export const Terminal: Component<XtermProps> = () => {
 			const text = (await rl.read(promptText())).split(' ')
 			const command = text.shift()!
 			const args = minimist(text)
-			if (command === 'ls') {
-				rl.println(await ls(currentPath()))
-			}
-			if (command === 'cd') {
-				await cd(fs, args._[0])
-			}
-			if (command === 'pwd') {
-				rl.println(pwd())
-			}
-			if (command === 'git') {
-				if (args._[0] === 'clone') {
-					console.log('clone :)')
-					setIsGitLoading(true)
-					console.log(await clone(gitFs))
-					setIsGitLoading(false)
-				}
-				if (args._[0] === 'log') {
-					console.log('log :)')
-					setIsGitLoading(true)
-					console.log(await log(gitFs))
-					setIsGitLoading(false)
-				}
+			if (command === 'clear') {
+				term.clear()
+				await typeEffect(rl, 'Cleared terminal')
 			}
 			setTimeout(readLine)
+			term.scrollToBottom()
 		}
 
 		term.loadAddon(fitAddon)
 		term.loadAddon(searchAddon)
 		term.loadAddon(clipboardAddon)
+		fitAddon.activate(term)
 		if (!currentPath()) await cd(fs, 'root')
 		let isInit = true
 		createEffect(async () => {
@@ -260,9 +258,21 @@ export const Terminal: Component<XtermProps> = () => {
 			}
 			readLine()
 		})
-		createEffect(() => {
-			term.options.theme = xTermTheme()
-		})
 	})
-	return <div id="terminal" class="h-ful l w-full" ref={setRef} />
+	createEffect(() => {
+		term.options.theme = xTermTheme()
+	})
+	createEffect(() => {
+		fontSize()
+		props.size.height
+		const propsed = fitAddon.proposeDimensions()
+		term.resize(propsed?.cols ?? term.cols, (propsed?.rows ?? 30) - 6)
+	})
+	return (
+		<div
+			style={{ height: props.size.height + 'px' }}
+			id="terminal"
+			ref={setRef}
+		/>
+	)
 }

@@ -46,6 +46,13 @@
 		--ring: 240 5.9% 10%;
 
 		--radius: 0.5rem;
+		--rainbow-bracket-red: red;
+		--rainbow-bracket-orange: orange;
+		--rainbow-bracket-yellow: yellow;
+		--rainbow-bracket-green: green;
+		--rainbow-bracket-blue: blue;
+		--rainbow-bracket-indigo: indigo;
+		--rainbow-bracket-violet: violet;
 	}
 
 	.dark,
@@ -131,4 +138,67 @@
 
 .cm-activeLineGutter {
 	color: var(--current-color) !important;
+}
+.cm-gutters {
+	border-right: none !important;
+	margin-right: 5px;
+}
+.rainbow-bracket-red {
+	color: var(--rainbow-bracket-red) !important;
+}
+
+.rainbow-bracket-red > span {
+	color: var(--rainbow-bracket-red) !important;
+}
+
+.rainbow-bracket-orange {
+	color: var(--rainbow-bracket-orange) !important;
+}
+
+.rainbow-bracket-orange > span {
+	color: var(--rainbow-bracket-orange) !important;
+}
+
+.rainbow-bracket-yellow {
+	color: var(--rainbow-bracket-yellow) !important;
+}
+
+.rainbow-bracket-yellow > span {
+	color: var(--rainbow-bracket-yellow) !important;
+}
+
+.rainbow-bracket-green {
+	color: var(--rainbow-bracket-green) !important;
+}
+
+.rainbow-bracket-green > span {
+	color: var(--rainbow-bracket-green) !important;
+}
+
+.rainbow-bracket-blue {
+	color: var(--rainbow-bracket-blue) !important;
+}
+
+.rainbow-bracket-blue > span {
+	color: var(--rainbow-bracket-blue) !important;
+}
+
+.rainbow-bracket-indigo {
+	color: var(--rainbow-bracket-indigo) !important;
+}
+
+.rainbow-bracket-indigo > span {
+	color: var(--rainbow-bracket-indigo) !important;
+}
+
+.rainbow-bracket-violet {
+	color: var(--rainbow-bracket-violet) !important;
+}
+
+.rainbow-bracket-violet > span {
+	color: var(--rainbow-bracket-violet) !important;
+}
+
+[title]:after {
+	-webkit-transition: opacity 0.5s ease-in-out;
 }

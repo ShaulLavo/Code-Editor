@@ -7,6 +7,7 @@ import { js_beautify } from 'js-beautify'
 import { createSignal } from 'solid-js'
 import { BuiltInParserName, Options } from 'prettier'
 import ts from 'typescript'
+import { code, setCode } from './stores/editorStore'
 const deafultConfig = {
 	typescript: {
 		parser: 'typescript',
@@ -60,4 +61,9 @@ export const Formmater = {
 export const [formmaterName, setFormmater] =
 	createSignal<keyof typeof Formmater>('prettier')
 export const formatter = () => Formmater[formmaterName()]
-// currentFileExtension()
+
+export const formatCode = async (config: Options) => {
+	const formatted = await formatter()(code()!, config)
+	console.log('formatted', formatted)
+	setCode(formatted)
+}

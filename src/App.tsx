@@ -8,13 +8,16 @@
 //TODO: run the code (quickjs? but polyfill the enterie DOM, just eval?)
 //TODO: ??
 //TODO: proft
-import { ReactiveMap } from '@solid-primitives/map'
 import { createElementSize } from '@solid-primitives/resize-observer'
 import {
+	batch,
+	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
+	onCleanup,
 	onMount,
+	useContext,
 	type Component
 } from 'solid-js'
 import {
@@ -36,23 +39,34 @@ import {
 	sanitizeFilePath,
 	traverseAndSetOpen
 } from './fileSystem/fileSystem.service'
-
+import { toast } from 'solid-sonner'
+import {
+	ColorModeProvider,
+	ColorModeScript,
+	createLocalStorageManager,
+	useColorMode
+} from '@kobalte/core'
 import { makePersisted } from '@solid-primitives/storage'
+import {
+	EditorFSContext,
+	EditorFSProvider,
+	TerminalFSProvider
+} from './context/FsContext'
 import { Formmater, extensionMap, getConfigFromExt } from './format'
-import { editorFS } from './stores/fsStore'
-import { currentBackground, currentColor, isDark } from './stores/themeStore'
+import {
+	baseFontSize,
+	currentBackground,
+	currentColor,
+	isDark,
+	bracketColors
+} from './stores/themeStore'
 import './xterm.css'
-import { setSkipSync } from './stores/editorStore'
+import { CmdK } from './components/CmdK'
 
-const App: Component = () => {
-	const {
-		currentPath,
-		fs,
-		loadTabData,
-		saveTabs,
-		setCurrentPath,
-		currentExtension
-	} = editorFS
+const Main: Component = () => {
+	const { currentPath, fs, loadTabData, saveTabs, currentExtension, fileMap } =
+		useContext(EditorFSContext)
+
 	const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
 		createSignal<number[]>([0.25, 0.75]),
 		{ name: 'horizontalPanelSize' }
@@ -61,20 +75,21 @@ const App: Component = () => {
 		createSignal<number[]>([0.7, 0.3]),
 		{ name: 'verticalPanelSize' }
 	)
+	let container: HTMLElement = null!
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
 	)
-
+	const [terminalContainer, setTerminalContainer] =
+		createSignal<HTMLDivElement>(null!)
+	const [statusBarRef, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
 	const editorSize = createElementSize(editorContainer)
-	const [headerRef, setHeaderRef] = createSignal<HTMLDivElement>(null!)
-	let container: HTMLElement = null!
-	const size = createElementSize(headerRef)
+	const terminalContainerSize = createElementSize(terminalContainer)
+	const statusBarSize = createElementSize(statusBarRef)
 
 	const [nodes, { refetch, mutate }] = createResource(() =>
 		getFileSystemStructure('root', fs)
 	)
 
-	const fileMap = new ReactiveMap<string, string>()
 	createResource(() => loadTabData(fileMap))
 	const prettierConfig = () => getConfigFromExt(currentExtension())
 	const currentNode = () =>
@@ -83,15 +98,17 @@ const App: Component = () => {
 		nodes() ? getFirstDirOrParent(currentPath(), nodes()!) : undefined
 
 	const filePath = () => (isFile(currentNode) ? currentPath() : undefined)
+	createEffect(() => {
+		console.log('currentPath', currentPath())
+		console.log('filePath', filePath())
+	})
 	const isTs = () =>
 		extensionMap[currentExtension() as keyof typeof extensionMap] ===
 		'typescript'
 
 	const [code, { mutate: setCode }] = createResource(filePath, async path => {
-		setSkipSync(false)
 		if (!path) return ''
 		if (fileMap.has(path)) {
-			console.log(fileMap.get(path))
 			return fileMap.get(path)
 		}
 		let file = (await fs.readFile(sanitizeFilePath(path))) as string
@@ -99,18 +116,24 @@ const App: Component = () => {
 			file = await Formmater.prettier(file, prettierConfig())
 		}
 		fileMap.set(path, file)
-		try {
-			await saveTabs(fileMap.keys())
-		} catch (e) {
-			console.error(e)
-		}
+
+		await saveTabs(fileMap.keys()) // promise
+
 		return file
 	})
 	const currentFile = () => fileMap.get(currentPath())
-	const traversedNodes = createMemo(() =>
-		nodes.loading
-			? []
-			: traverseAndSetOpen(nodes()!, currentPath().split('/').filter(Boolean))
+	const traversedNodes = createMemo(
+		() =>
+			nodes.loading
+				? []
+				: traverseAndSetOpen(
+						nodes()!,
+						currentPath().split('/').filter(Boolean)
+					),
+		[],
+		{
+			equals: () => false
+		}
 	)
 
 	onMount(async () => {
@@ -118,113 +141,133 @@ const App: Component = () => {
 			const fontFaces = [...fontFaceSet]
 		})
 	})
-	return (
-		<main
-			ref={container}
-			class="dockview-theme-dark"
-			style={{
-				'font-family': 'JetBrains Mono, monospace',
-				height: '100vh',
-				overflow: 'hidden',
-				'background-color': currentBackground()
-			}}
-		>
-			<div style={{ 'padding-bottom': `${size.height}px` }}>
-				<Header
-					code={code}
-					setCode={setCode}
-					refetch={refetch}
-					setHeaderRef={setHeaderRef}
-					currentExtension={currentExtension as () => string}
-					fs={fs}
-					clearTabs={editorFS.clearTabs}
-					setCurrentPath={setCurrentPath}
-				/>
-			</div>
-			<Resizable
-				onSizesChange={size => {
-					if (size.length !== 2) return
-					if (size[0] === 0.5 && size[1] === 0.5) return
 
-					setHorizontalPanelSize(size)
-				}}
-				class="w-full flex"
+	const { setColorMode } = useColorMode()
+	createEffect(() => {
+		setColorMode(isDark() ? 'dark' : 'light')
+	})
+	return (
+		<>
+			<CmdK code={code} setCode={setCode} refetch={refetch} />
+
+			<main
+				ref={container}
+				class="dockview-theme-dark"
 				style={{
-					'background-color': currentBackground(),
-					color: currentColor()
+					'font-family': 'JetBrains Mono, monospace',
+					height: '100vh',
+					overflow: 'hidden',
+					'background-color': currentBackground()
 				}}
-				orientation="horizontal"
 			>
-				<ResizablePanel
-					class="overflow-x-hidden"
-					initialSize={horizontalPanelSize()?.[0]}
+				<Resizable
+					onSizesChange={size => {
+						if (size.length !== 2) return
+						if (size[0] === 0.5 && size[1] === 0.5) return
+
+						setHorizontalPanelSize(size)
+					}}
+					class="w-full flex"
+					style={{
+						'background-color': currentBackground(),
+						color: currentColor()
+					}}
+					orientation="horizontal"
 				>
-					<FileSystem
-						traversedNodes={traversedNodes}
-						currentPath={currentPath}
-						setCurrentPath={setCurrentPath}
-					/>
-				</ResizablePanel>
-				<ResizableHandle class={isDark() ? ' bg-gray-800' : 'bg-gray-200'} />
-				<ResizablePanel
-					class="overflow-hidden"
-					initialSize={horizontalPanelSize()?.[1]}
-				>
-					<Resizable
-						onSizesChange={size => {
-							if (size.length !== 2) return
-							if (size[0] === 0.5 && size[1] === 0.5) return
-							setVerticalPanelSize(size)
-						}}
-						class="w-full"
-						style={{
-							'background-color': currentBackground(),
-							color: currentColor()
-						}}
-						orientation="vertical"
+					<ResizablePanel
+						class="overflow-x-hidden"
+						initialSize={horizontalPanelSize()?.[0]}
 					>
-						<ResizablePanel
-							ref={setEditorContainer}
-							class="overflow-hidden"
-							initialSize={verticalPanelSize()[0]}
+						<FileSystem traversedNodes={traversedNodes} />
+					</ResizablePanel>
+					<ResizableHandle class={isDark() ? 'bg-gray-800' : 'bg-gray-200'} />
+					<ResizablePanel
+						class="overflow-hidden"
+						initialSize={horizontalPanelSize()?.[1]}
+					>
+						<Resizable
+							onSizesChange={size => {
+								if (size.length !== 2) return
+								if (size[0] === 0.5 && size[1] === 0.5) return
+								setVerticalPanelSize(size)
+							}}
+							class="w-full"
+							style={{
+								'background-color': currentBackground(),
+								color: currentColor()
+							}}
+							orientation="vertical"
 						>
-							<div class="">
-								<EditorTabs
-									fileMap={fileMap}
-									filePath={filePath}
-									setCurrentPath={setCurrentPath}
-								/>
-								<Editor
-									code={code}
-									setCode={setCode}
-									size={editorSize}
-									currentExtension={currentExtension}
-									currentPath={currentPath}
-									prettierConfig={prettierConfig}
-									isTs={isTs}
-								/>
-							</div>
-						</ResizablePanel>
-						<ResizableHandle
-							class={isDark() ? ' bg-gray-800' : 'bg-blue-200'}
-						/>
-						<ResizablePanel
-							class="overflow-hidden p-2"
-							initialSize={verticalPanelSize()[1]}
-						>
-							<Terminal dirPath={dirPath} />
-						</ResizablePanel>
-					</Resizable>
-				</ResizablePanel>
-			</Resizable>
-			{/* <EditorTabs
-				currentNode={currentNode}
-				fileMap={fileMap}
-				setCurrentPath={setCurrentPath}
-			/>
-			<Editor code={code} setCode={setCode} /> */}
-			<StatusBar isTs={isTs} />
-		</main>
+							<ResizablePanel
+								ref={setEditorContainer}
+								class="overflow-hidden"
+								initialSize={verticalPanelSize()[0]}
+							>
+								<div class="">
+									<EditorTabs filePath={filePath} />
+									<Editor
+										code={code}
+										setCode={setCode}
+										size={editorSize}
+										currentExtension={currentExtension}
+										prettierConfig={prettierConfig}
+										isTs={isTs}
+									/>
+								</div>
+							</ResizablePanel>
+							<ResizableHandle
+								class={isDark() ? 'bg-gray-800' : 'bg-gray-200'}
+							/>
+							<ResizablePanel
+								class="overflow-hidden p-2"
+								initialSize={verticalPanelSize()[1]}
+								ref={setTerminalContainer}
+							>
+								<Terminal size={terminalContainerSize} />
+							</ResizablePanel>
+						</Resizable>
+					</ResizablePanel>
+				</Resizable>
+
+				<StatusBar ref={setStatusBarRef} isTs={isTs} />
+			</main>
+		</>
+	)
+}
+
+const App: Component = () => {
+	const storageManager = createLocalStorageManager('vite-ui-theme')
+	const setCSSVariable = (varName: string, color: string) => {
+		if (!varName.startsWith('--')) {
+			varName = `--${varName}`
+		}
+
+		document.documentElement.style.setProperty(varName, color)
+	}
+	createEffect(() => {
+		setCSSVariable('--current-color', currentColor())
+		setCSSVariable('--current-background', currentBackground())
+
+		if (bracketColors()) {
+			for (const [key, color] of Object.entries(bracketColors())) {
+				setCSSVariable('--rainbow-bracket-' + key, color as string)
+			}
+		}
+	})
+
+	createEffect(() => {
+		const fontSize = `${baseFontSize()}px`
+		document.documentElement.style.fontSize = fontSize
+	})
+	return (
+		<EditorFSProvider>
+			<TerminalFSProvider>
+				<ColorModeScript storageType={storageManager.type} />
+				<ColorModeProvider storageManager={storageManager}>
+					<Main />
+				</ColorModeProvider>
+			</TerminalFSProvider>
+		</EditorFSProvider>
 	)
 }
 

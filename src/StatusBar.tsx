@@ -1,4 +1,4 @@
-import { Accessor, Component, For, createSignal } from 'solid-js'
+import { Accessor, Component, For, Setter, createSignal } from 'solid-js'
 import { currentBackground, currentColor } from './stores/themeStore'
 import { createContext } from 'solid-js'
 
@@ -10,9 +10,10 @@ import {
 	isGitLoading,
 	isTsLoading
 } from './stores/editorStore'
-
+import git from './assets/icons/git.svg'
 import { Spinner, SpinnerType } from 'solid-spinner'
 import { GitIcon } from './components/GitIcon'
+import { Git, TypeScript } from './assets/customIcons'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -49,8 +50,9 @@ interface Status {
 
 interface StatusBarProps {
 	isTs: Accessor<boolean>
+	ref: Setter<HTMLDivElement>
 }
-export const StatusBar: Component<StatusBarProps> = ({ isTs }) => {
+export const StatusBar: Component<StatusBarProps> = ({ isTs, ref }) => {
 	const selcetionLength = () =>
 		currentSelection().length > 0
 			? `(${currentSelection().length} selected)`
@@ -64,12 +66,14 @@ export const StatusBar: Component<StatusBarProps> = ({ isTs }) => {
 				isLoading: false
 			},
 			{
-				title: `${isTs() ? 'TypeScript' : ''}`,
+				title: isTs()
+					? () => <TypeScript color={currentColor()} width={15} height={15} />
+					: '',
 				// description: 'Go to Line/Column',
 				isLoading: isTs() && isTsLoading()
 			},
 			{
-				title: 'Git',
+				title: () => <Git color={currentColor()} width={15} height={15} />,
 				description: 'File Encoding',
 				isLoading: isGitLoading()
 			},
@@ -82,6 +86,7 @@ export const StatusBar: Component<StatusBarProps> = ({ isTs }) => {
 	return (
 		// <StatusBarCtx.Provider value={value}>
 		<div
+			ref={ref}
 			class="absolute  bottom-0 w-full  z-50 flex "
 			style={{ 'background-color': currentBackground() }}
 		>
@@ -92,8 +97,8 @@ export const StatusBar: Component<StatusBarProps> = ({ isTs }) => {
 							{status.isLoading ? (
 								<Spinner
 									type={SpinnerType.tailSpin}
-									width={12}
-									height={12}
+									width={15}
+									height={15}
 									color={currentColor()}
 								/>
 							) : status.description ? (

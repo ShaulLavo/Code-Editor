@@ -1,3 +1,9 @@
+/* hacks */
+.xterm-cursor-outline {
+	outline: none !important;
+}
+
+/* xterm css */
 .xterm {
 	cursor: text;
 	position: relative;

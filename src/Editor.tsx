@@ -4,11 +4,10 @@ import { javascript } from '@codemirror/lang-javascript'
 import {
 	bracketMatching,
 	foldGutter,
-	indentOnInput,
-	matchBrackets
+	indentOnInput
 } from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
-import { EditorState, Extension, StateEffect } from '@codemirror/state'
+import { EditorState, Extension } from '@codemirror/state'
 import {
 	EditorView,
 	drawSelection,
@@ -36,26 +35,24 @@ import {
 	batch,
 	createEffect,
 	createSignal,
-	on,
-	onCleanup,
-	onMount
+	onMount,
+	useContext
 } from 'solid-js'
-import { extensionMap, formatter } from './format'
+import { extensionMap, formatCode, formatter } from './format'
 import { createEditorControlledValue } from './hooks/controlledValue'
 import { createCompartmentExtension } from './hooks/createCompartmentExtension'
 import { useShortcuts } from './hooks/useShortcuts'
 import {
 	editorHight,
 	editorRef,
+	isMiniMap,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
 	setEditorHight,
 	setEditorRef,
 	setIsTsLoading,
-	setSkipSync,
-	showLineNumber,
-	skipSync
+	showLineNumber
 } from './stores/editorStore'
 import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
 import { defaultKeymap } from './utils/keymap'
@@ -64,25 +61,31 @@ import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
 import ts from 'typescript'
 import { initTsWorker } from './utils/worker'
+
+import { Options } from 'prettier'
+import { EditorFSContext } from './context/FsContext'
+import { createInnerZoom } from './hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
-import { Options } from 'prettier'
 
 export interface EditorProps {
 	code:
 		| Accessor<string>
 		| Resource<string | undefined>
 		| (() => string | undefined)
-	setCode: Setter<string | undefined> | ((code: string) => void)
+	setCode:
+		| Setter<string | undefined>
+		| ((code: string, shouldSkip?: boolean) => void)
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
 	currentExtension: Accessor<string | undefined>
-	currentPath: Accessor<string>
 	prettierConfig: Accessor<Options>
 	isTs: Accessor<boolean>
 }
 
+export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
+	null!
 export const Editor = ({
 	code,
 	setCode,
@@ -90,14 +93,18 @@ export const Editor = ({
 	formatOnMount,
 	size,
 	currentExtension,
-	currentPath,
 	prettierConfig,
 	isTs
 }: EditorProps) => {
-	useShortcuts(code, setCode, currentExtension)
+	const { currentPath, setCurrentPath } = useContext(EditorFSContext)
+	// useShortcuts(code, setCode, currentExtension)
+
+	const { fontSize } = createInnerZoom({
+		ref: editorRef,
+		key: 'editor'
+	})
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
-	let worker: WorkerShape & Remote<ts.System> & { close: () => void } = null!
 	const start = performance.now()
 	const setupEditor = () => {
 		const baseExtensions = [
@@ -118,7 +125,8 @@ export const Editor = ({
 			foldGutter({}),
 			bracketMatching(),
 			rainbowBrackets(),
-			highlightActiveLineGutter()
+			highlightActiveLineGutter(),
+			gutter({ class: 'cm-custom-gutter' })
 		] as Extension[]
 		const editorState = EditorState.create({
 			doc: code(),
@@ -143,8 +151,8 @@ export const Editor = ({
 					setCurrentLine(line.number)
 					setCurrentColumn(main.head - line.from)
 					setEditorHight(Math.max(doc.lines * 13, 13))
-					setCode(doc.toString())
-					setSkipSync(true)
+					// if (doc.eq(view.state.doc)) return //??
+					setCode(doc.toString(), true)
 				})
 			}
 		})
@@ -155,7 +163,7 @@ export const Editor = ({
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
 
-		formatOnMount?.() && formatCode()
+		formatOnMount?.() && formatCode(prettierConfig())
 		defaultTheme && setTheme(defaultTheme)
 
 		return view
@@ -166,28 +174,25 @@ export const Editor = ({
 		return parts
 	}
 
-	const formatCode = async () => {
-		const formatted = await formatter()(code()!, prettierConfig())
-		setCode(formatted)
-	}
-
 	const createExtention = (extention: Accessor<Extension>) =>
 		createCompartmentExtension(extention, editorView)
 
-	createEditorControlledValue(editorView, code, skipSync, setSkipSync)
+	createEditorControlledValue(editorView, code)
 	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
 	createExtention(currentTheme)
 	createExtention(() =>
 		showMinimap.compute([], () => {
-			return {
-				create: () => {
-					const minimap = document.createElement('div')
-					// autoHide(minimap)
-					return { dom: minimap }
-				},
-				showOverlay: 'mouse-over',
-				displayText: 'blocks'
-			}
+			return isMiniMap()
+				? {
+						create: () => {
+							const minimap = document.createElement('div')
+							// autoHide(minimap)
+							return { dom: minimap }
+						},
+						showOverlay: 'mouse-over',
+						displayText: 'blocks'
+					}
+				: null
 		})
 	)
 	createExtention(() => {
@@ -201,6 +206,16 @@ export const Editor = ({
 		]
 		return tsExtensions
 	})
+	createExtention(() =>
+		EditorView.theme({
+			'.cm-content': {
+				fontSize: fontSize() + 'pt'
+			},
+			'.cm-gutters': {
+				fontSize: fontSize() + 'pt'
+			}
+		})
+	)
 
 	createEffect(() => {
 		//@ts-ignore
@@ -213,18 +228,14 @@ export const Editor = ({
 		setupEditor()
 		initTsWorker(async tsWorker => {
 			worker = tsWorker
-			console.log(Object.keys(worker))
-			// console.log(await worker.directoryExists(''))
 			setIsWorkerReady(true)
 		})
 	})
-	createEffect(() => {
-		console.log(currentPath())
-	})
+
 	const buttons = () => parsePathToButtons(currentPath())
 	return (
 		<>
-			<div>
+			<div class="text-xs">
 				<For each={buttons()}>
 					{(part, index) => (
 						<span>

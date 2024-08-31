@@ -173,73 +173,80 @@ export const whiteDarkInit = (options?: Partial<CreateThemeOptions>) => {
 export const whiteDark = whiteDarkInit()
 
 export const xTermWhiteLightTheme = {
-	// Default colors
-	foreground: cl.foreground, // Map to foreground color
-	background: cl.background, // Map to background color
-	cursor: cl.cursor, // Map to cursor color
-	cursorAccent: cl.background, // Map to background color for contrast
-	selectionBackground: cl.selection, // Map to selection background color
-	selectionForeground: cl.foreground, // Map to a visible foreground color on selection
-	selectionInactiveBackground: cl.selectionMatch, // Inactive selection background color
+	foreground: cl.foreground,
+	background: cl.background,
+	cursor: cl.cursor,
+	cursorAccent: cl.background,
+	selectionBackground: cl.selection,
+	selectionForeground: cl.foreground,
+	selectionInactiveBackground: cl.selectionMatch,
 
-	// ANSI colors (mapped based on usage in styles)
-	black: cl.background, // Background as the darkest color
-	red: '#0431fa', // Operators and brackets
-	green: cl.string, // Strings and regexps
-	yellow: cl.comment, // Comments for a less bright color
-	blue: cl.cursor, // Cursor color as blue
-	magenta: '#0431fa', // Operators, matching color for ANSI
-	cyan: cl.regexp, // Regexps and similar
-	white: cl.foreground, // Foreground as white
+	black: cl.background,
+	red: '#0431fa',
+	green: cl.string,
+	yellow: cl.comment,
+	blue: cl.cursor,
+	magenta: '#0431fa',
+	cyan: cl.regexp,
+	white: cl.foreground,
 
-	brightBlack: cl.comment, // Brighter black, using comment color
-	brightRed: '#0431fa', // Bright operators and brackets
-	brightGreen: cl.string, // Bright strings
-	brightYellow: cl.comment, // Bright comments
-	brightBlue: '#0431fa', // Brighter blue for operators
-	brightMagenta: '#0431fa', // Brighter magenta, matching ANSI
-	brightCyan: cl.regexp, // Brighter regexps
-	brightWhite: cl.foreground, // Bright white, matching foreground
+	brightBlack: cl.comment,
+	brightRed: '#0431fa',
+	brightGreen: cl.string,
+	brightYellow: cl.comment,
+	brightBlue: '#0431fa',
+	brightMagenta: '#0431fa',
+	brightCyan: cl.regexp,
+	brightWhite: cl.foreground,
 
-	// Optional extended ANSI colors (16-255)
-	extendedAnsi: [
-		cl.activeLine // Active line highlight color
-		// Add more if needed
-	]
+	extendedAnsi: [cl.activeLine]
 }
 
 export const xTermWhiteDarkTheme = {
-	// Default colors
-	foreground: cd.foreground, // Map to foreground color
-	background: cd.background, // Map to background color
-	cursor: cd.cursor, // Map to cursor color
-	cursorAccent: cd.background, // Map to background color for contrast
-	selectionBackground: cd.selection, // Map to selection background color
-	selectionForeground: cd.foreground, // Map to a visible foreground color on selection
-	selectionInactiveBackground: cd.selectionMatch, // Inactive selection background color
+	foreground: cd.foreground,
+	background: cd.background,
+	cursor: cd.cursor,
+	cursorAccent: cd.background,
+	selectionBackground: cd.selection,
+	selectionForeground: cd.foreground,
+	selectionInactiveBackground: cd.selectionMatch,
 
-	// ANSI colors (mapped based on usage in styles)
-	black: cd.background, // Background as the darkest color
-	red: '#bb9af7', // Operators and brackets
-	green: cd.string, // Strings and regexps
-	yellow: cd.comment, // Comments for a less bright color
-	blue: cd.cursor, // Cursor color as blue
-	magenta: '#bb9af7', // Operators, matching color for ANSI
-	cyan: cd.regexp, // Regexps and similar
-	white: cd.foreground, // Foreground as white
+	black: cd.background,
+	red: '#bb9af7',
+	green: cd.string,
+	yellow: cd.comment,
+	blue: cd.cursor,
+	magenta: '#bb9af7',
+	cyan: cd.regexp,
+	white: cd.foreground,
 
-	brightBlack: cd.comment, // Brighter black, using comment color
-	brightRed: '#bb9af7', // Bright operators and brackets
-	brightGreen: cd.string, // Bright strings
-	brightYellow: cd.comment, // Bright comments
-	brightBlue: '#bb9af7', // Brighter blue for operators
-	brightMagenta: '#bb9af7', // Brighter magenta, matching ANSI
-	brightCyan: cd.regexp, // Brighter regexps
-	brightWhite: cd.foreground, // Bright white, matching foreground
+	brightBlack: cd.comment,
+	brightRed: '#bb9af7',
+	brightGreen: cd.string,
+	brightYellow: cd.comment,
+	brightBlue: '#bb9af7',
+	brightMagenta: '#bb9af7',
+	brightCyan: cd.regexp,
+	brightWhite: cd.foreground,
 
-	// Optional extended ANSI colors (16-255)
-	extendedAnsi: [
-		cd.activeLine // Active line highlight color
-		// Add more if needed
-	]
+	extendedAnsi: [cd.activeLine]
+}
+export const whiteLightBracketColors = {
+	red: xTermWhiteLightTheme.red,
+	orange: xTermWhiteLightTheme.yellow,
+	yellow: xTermWhiteLightTheme.brightYellow,
+	green: xTermWhiteLightTheme.green,
+	blue: xTermWhiteLightTheme.blue,
+	indigo: xTermWhiteLightTheme.brightBlue,
+	violet: xTermWhiteLightTheme.magenta
+}
+
+export const whiteDarkBracketColors = {
+	red: xTermWhiteDarkTheme.red,
+	orange: xTermWhiteDarkTheme.yellow,
+	yellow: xTermWhiteDarkTheme.brightYellow,
+	green: xTermWhiteDarkTheme.green,
+	blue: xTermWhiteDarkTheme.blue,
+	indigo: xTermWhiteDarkTheme.brightBlue,
+	violet: xTermWhiteDarkTheme.magenta
 }

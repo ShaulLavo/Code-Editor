@@ -31,11 +31,6 @@ async function createWorkerStorage(fileName: string = 'store') {
 		accessHandle = await fileHandle.createSyncAccessHandle()
 		accessHandlesMap.set(fileName, accessHandle)
 	}
-	console.log(
-		'handle:',
-		JSON.stringify(accessHandle),
-		accessHandlesMap.get(fileName)
-	)
 
 	const readStore = (): { [key: string]: string } => {
 		const size = accessHandle.getSize()

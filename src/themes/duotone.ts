@@ -1,7 +1,7 @@
 /**
  * @name duotone
  * @author Bram de Haan
- * by Bram de Haan, adapted from DuoTone themes by Simurai (http://simurai.com/projects/2016/01/01/duotone-themes)
+ * by Bram de Haan, adapted from DuoTone themes by Simurai (http:
  */
 import { tags as t } from '@lezer/highlight'
 import { createTheme, type CreateThemeOptions } from '@uiw/codemirror-themes'
@@ -98,73 +98,79 @@ export const duotoneDarkInit = (options?: Partial<CreateThemeOptions>) => {
 export const duotoneDark = duotoneDarkInit()
 
 export const xTermDuotoneLightTheme = {
-	// Default colors
-	foreground: '#b29762', // Map to a suitable foreground color
-	background: '#faf8f5', // Map to your background color
-	cursor: '#93abdc', // Cursor color (caret)
-	cursorAccent: '#faf8f5', // Cursor accent (matching background)
-	selectionBackground: '#e3dcce', // Selection background color
-	selectionForeground: '#2d2006', // Selection foreground color (chosen for visibility)
-	selectionInactiveBackground: '#e3dcce', // Inactive selection background color
+	foreground: '#b29762',
+	background: '#faf8f5',
+	cursor: '#93abdc',
+	cursorAccent: '#faf8f5',
+	selectionBackground: '#e3dcce',
+	selectionForeground: '#2d2006',
+	selectionInactiveBackground: '#e3dcce',
 
-	// ANSI colors (mapped based on usage in styles)
-	black: '#2d2006', // Default for dark elements
-	red: '#063289', // Important keywords, atoms
-	green: '#896724', // Type names, strings
-	yellow: '#b29762', // Property names
-	blue: '#1659df', // Operators and strings
-	magenta: '#b6ad9a', // Comments
-	cyan: '#cdc4b1', // Gutter foreground color
-	white: '#faf8f5', // Background color for bright contrast
+	black: '#2d2006',
+	red: '#063289',
+	green: '#896724',
+	yellow: '#b29762',
+	blue: '#1659df',
+	magenta: '#b6ad9a',
+	cyan: '#cdc4b1',
+	white: '#faf8f5',
 
-	brightBlack: '#b6ad9a', // Bracket and comment color
-	brightRed: '#063289', // More pronounced keywords, links
-	brightGreen: '#896724', // Important strings
-	brightYellow: '#b29762', // Properties that need visibility
-	brightBlue: '#1659df', // Operators
-	brightMagenta: '#2d2006', // Emphasis tags
-	brightCyan: '#93abdc', // Caret color
-	brightWhite: '#ffffff', // Pure white (often default)
+	brightBlack: '#b6ad9a',
+	brightRed: '#063289',
+	brightGreen: '#896724',
+	brightYellow: '#b29762',
+	brightBlue: '#1659df',
+	brightMagenta: '#2d2006',
+	brightCyan: '#93abdc',
+	brightWhite: '#ffffff',
 
-	// Optional extended ANSI colors (16-255)
-	extendedAnsi: [
-		'#ddceb154' // Line highlight, example extended color
-		// Add more if needed
-	]
+	extendedAnsi: ['#ddceb154']
 }
 
 export const xTermDuotoneDarkTheme = {
-	// Default colors
-	foreground: '#6c6783', // Foreground color
-	background: '#2a2734', // Background color
-	cursor: '#ffad5c', // Cursor color (caret)
-	cursorAccent: '#2a2734', // Cursor accent color
-	selectionBackground: '#91ff6c26', // Selection background color
-	selectionForeground: '#eeebff', // Selection foreground color (chosen for visibility)
-	selectionInactiveBackground: '#91ff6c26', // Inactive selection background color
+	foreground: '#6c6783',
+	background: '#2a2734',
+	cursor: '#ffad5c',
+	cursorAccent: '#2a2734',
+	selectionBackground: '#91ff6c26',
+	selectionForeground: '#eeebff',
+	selectionInactiveBackground: '#91ff6c26',
 
-	// ANSI colors (mapped based on usage in styles)
-	black: '#2a2734', // Default background color
-	red: '#ffcc99', // Keywords, atoms
-	green: '#ffb870', // Strings
-	yellow: '#ffad5c', // Operators
-	blue: '#7a63ee', // Type names, URLs
-	magenta: '#9a86fd', // Property names
-	cyan: '#6c6783', // Comments
-	white: '#eeebff', // Bright contrast elements
+	black: '#2a2734',
+	red: '#ffcc99',
+	green: '#ffb870',
+	yellow: '#ffad5c',
+	blue: '#7a63ee',
+	magenta: '#9a86fd',
+	cyan: '#6c6783',
+	white: '#eeebff',
 
-	brightBlack: '#545167', // Gutter foreground
-	brightRed: '#ffcc99', // Important keywords
-	brightGreen: '#ffb870', // Important strings
-	brightYellow: '#ffad5c', // Operators
-	brightBlue: '#7a63ee', // More emphasized types
-	brightMagenta: '#9a86fd', // Important properties
-	brightCyan: '#e09142', // Units, punctuation
-	brightWhite: '#ffffff', // Pure white for high contrast
+	brightBlack: '#545167',
+	brightRed: '#ffcc99',
+	brightGreen: '#ffb870',
+	brightYellow: '#ffad5c',
+	brightBlue: '#7a63ee',
+	brightMagenta: '#9a86fd',
+	brightCyan: '#e09142',
+	brightWhite: '#ffffff',
 
-	// Optional extended ANSI colors (16-255)
-	extendedAnsi: [
-		'#36334280' // Line highlight, example extended color
-		// Add more if needed
-	]
+	extendedAnsi: ['#36334280']
+}
+export const duotoneLightBracketColors = {
+	red: xTermDuotoneLightTheme.red,
+	orange: xTermDuotoneLightTheme.yellow,
+	yellow: xTermDuotoneLightTheme.brightYellow,
+	green: xTermDuotoneLightTheme.green,
+	blue: xTermDuotoneLightTheme.blue,
+	indigo: xTermDuotoneLightTheme.brightBlue,
+	violet: xTermDuotoneLightTheme.magenta
+}
+export const duotoneDarkBracketColors = {
+	red: xTermDuotoneDarkTheme.red,
+	orange: xTermDuotoneDarkTheme.yellow,
+	yellow: xTermDuotoneDarkTheme.brightYellow,
+	green: xTermDuotoneDarkTheme.green,
+	blue: xTermDuotoneDarkTheme.blue,
+	indigo: xTermDuotoneDarkTheme.brightBlue,
+	violet: xTermDuotoneDarkTheme.magenta
 }

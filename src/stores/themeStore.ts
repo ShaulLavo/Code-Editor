@@ -2,41 +2,59 @@ import { makePersisted } from '@solid-primitives/storage'
 
 import { createEffect, createSignal } from 'solid-js'
 import {
-	baseColors,
-	poimandres,
-	xTermPoimandresTheme
-} from '../themes/poimandres'
-import {
-	xTermXcodeDarkTheme,
-	xTermXcodeLightTheme,
-	xcodeDark,
-	xcodeLight
-} from '~/themes/xcode'
-import {
-	whiteDark,
-	whiteLight,
-	xTermWhiteDarkTheme,
-	xTermWhiteLightTheme
-} from '~/themes/white'
+	duotoneDark,
+	duotoneLight,
+	xTermDuotoneDarkTheme,
+	xTermDuotoneLightTheme,
+	duotoneDarkBracketColors,
+	duotoneLightBracketColors
+} from '~/themes/duotone'
 import {
 	githubDark,
 	githubLight,
 	xTermGithubDarkTheme,
-	xTermGithubLightTheme
+	xTermGithubLightTheme,
+	githubDarkBracketColors,
+	githubLightBracketColors
 } from '~/themes/github'
 import {
+	tokyoNight,
+	xTermTokyoNightTheme,
+	tokyoNightBracketColors
+} from '~/themes/toktoNight'
+import {
+	tokyoNightDay,
+	xTermTokyoNightDayTheme,
+	tokyoNightDayBracketColors
+} from '~/themes/tokyoNightDay'
+import {
 	tokyoNightStorm,
-	xTermTokyoNightStormTheme
+	xTermTokyoNightStormTheme,
+	tokyoNightStormBracketColors
 } from '~/themes/tokyoNightStorm'
 import {
-	duotoneDark,
-	duotoneLight,
-	xTermDuotoneDarkTheme,
-	xTermDuotoneLightTheme
-} from '~/themes/duotone'
-import { Terminal } from '@xterm/xterm'
-import { tokyoNightDay, xTermTokyoNightDayTheme } from '~/themes/tokyoNightDay'
-import { tokyoNight, xTermTokyoNightTheme } from '~/themes/toktoNight'
+	whiteDark,
+	whiteLight,
+	xTermWhiteDarkTheme,
+	xTermWhiteLightTheme,
+	whiteDarkBracketColors,
+	whiteLightBracketColors
+} from '~/themes/white'
+import {
+	xTermXcodeDarkTheme,
+	xTermXcodeLightTheme,
+	xcodeDark,
+	xcodeLight,
+	xCodeDarkBracketColors,
+	xCodeLightBracketColors
+} from '~/themes/xcode'
+import {
+	baseColors,
+	poimandres,
+	poimandresBracketColors,
+	xTermPoimandresTheme
+} from '../themes/poimandres'
+import { useColorMode } from '@kobalte/core'
 
 const themeSettings = {
 	xcodeDark: {
@@ -46,7 +64,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermXcodeDarkTheme,
 		color1: '\x1b[38;2;255;129;112m',
-		color2: '\x1b[38;2;107;223;255m'
+		color2: '\x1b[38;2;107;223;255m',
+		rainbowBracket: xCodeDarkBracketColors
 	},
 	xcodeLight: {
 		theme: xcodeLight,
@@ -55,7 +74,8 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermXcodeLightTheme,
 		color1: '\x1b[38;2;210;52;35m',
-		color2: '\x1b[38;2;3;47;98m'
+		color2: '\x1b[38;2;3;47;98m',
+		rainbowBracket: xCodeLightBracketColors
 	},
 	white: {
 		theme: whiteLight,
@@ -64,7 +84,8 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermWhiteLightTheme,
 		color1: '\x1b[38;2;4;49;250m',
-		color2: '\x1b[38;2;107;122;136m'
+		color2: '\x1b[38;2;107;122;136m',
+		rainbowBracket: whiteLightBracketColors
 	},
 	black: {
 		theme: whiteDark,
@@ -73,7 +94,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermWhiteDarkTheme,
 		color1: '\x1b[38;2;187;154;247m',
-		color2: '\x1b[38;2;168;168;177m'
+		color2: '\x1b[38;2;168;168;177m',
+		rainbowBracket: whiteDarkBracketColors
 	},
 	duotoneDark: {
 		theme: duotoneDark,
@@ -82,7 +104,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermDuotoneDarkTheme,
 		color1: '\x1b[38;2;250;173;92m',
-		color2: '\x1b[38;2;154;134;253m'
+		color2: '\x1b[38;2;154;134;253m',
+		rainbowBracket: duotoneDarkBracketColors
 	},
 	duotoneLight: {
 		theme: duotoneLight,
@@ -91,7 +114,8 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermDuotoneLightTheme,
 		color1: '\x1b[38;2;6;50;137m',
-		color2: '\x1b[38;2;22;89;223m'
+		color2: '\x1b[38;2;22;89;223m',
+		rainbowBracket: duotoneLightBracketColors
 	},
 	githubDark: {
 		theme: githubDark,
@@ -100,7 +124,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermGithubDarkTheme,
 		color1: '\x1b[38;2;255;123;114m',
-		color2: '\x1b[38;2;121;192;255m'
+		color2: '\x1b[38;2;121;192;255m',
+		rainbowBracket: githubDarkBracketColors
 	},
 	githubLight: {
 		theme: githubLight,
@@ -109,7 +134,8 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermGithubLightTheme,
 		color1: '\x1b[38;2;215;58;73m',
-		color2: '\x1b[38;2;0;92;197m'
+		color2: '\x1b[38;2;0;92;197m',
+		rainbowBracket: githubLightBracketColors
 	},
 	tokyoNight: {
 		theme: tokyoNight,
@@ -119,7 +145,8 @@ const themeSettings = {
 		xTermTheme: xTermTokyoNightTheme,
 		themeName: 'xTermTokyoNightTheme',
 		color1: '\x1b[38;2;255;83;112m',
-		color2: '\x1b[38;2;122;162;247m'
+		color2: '\x1b[38;2;122;162;247m',
+		rainbowBracket: tokyoNightBracketColors
 	},
 	tokyoNightDay: {
 		theme: tokyoNightDay,
@@ -128,7 +155,8 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermTokyoNightDayTheme,
 		color1: '\x1b[38;2;245;42;101m',
-		color2: '\x1b[38;2;55;96;191m'
+		color2: '\x1b[38;2;55;96;191m',
+		rainbowBracket: tokyoNightDayBracketColors
 	},
 	tokyoNightStorm: {
 		theme: tokyoNightStorm,
@@ -137,7 +165,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermTokyoNightStormTheme,
 		color1: '\x1b[38;2;255;83;112m',
-		color2: '\x1b[38;2;122;162;247m'
+		color2: '\x1b[38;2;122;162;247m',
+		rainbowBracket: tokyoNightStormBracketColors
 	},
 	poimandres: {
 		theme: poimandres,
@@ -146,7 +175,8 @@ const themeSettings = {
 		mode: 'dark',
 		xTermTheme: xTermPoimandresTheme,
 		color1: '\x1b[38;2;208;103;157m', // Hot Red - Strings and meta
-		color2: '\x1b[38;2;173;215;255m'
+		color2: '\x1b[38;2;173;215;255m',
+		rainbowBracket: poimandresBracketColors
 	},
 	defaultLight: {
 		theme: [],
@@ -155,23 +185,38 @@ const themeSettings = {
 		mode: 'light',
 		xTermTheme: xTermGithubLightTheme,
 		color1: '',
-		color2: ''
+		color2: '',
+		rainbowBracket: {
+			red: 'red',
+			orange: 'yellow',
+			yellow: 'brightYellow',
+			green: 'green',
+			blue: 'blue',
+			indigo: 'brightBlue',
+			violet: 'magenta'
+		}
 	}
 } as const
 
 type ThemeKey = keyof typeof themeSettings
 type ThemeSetting = (typeof themeSettings)[ThemeKey]
 
+const [baseFontSize, setBaseFontSize] = makePersisted(createSignal(16), {
+	name: 'baseFontSize'
+})
+
 const [currentThemeName, setTheme] = makePersisted(
 	createSignal<ThemeKey>('poimandres'),
 	{ name: 'theme' }
 )
+
 const currentThemeSettings = () =>
 	themeSettings[currentThemeName() ?? 'poimandres']
 const currentTheme = () => currentThemeSettings().theme
 const currentColor = () => currentThemeSettings().color
 const currentBackground = () => currentThemeSettings().background
 const isDark = () => currentThemeSettings().mode === 'dark'
+const bracketColors = () => currentThemeSettings().rainbowBracket
 const xTermTheme = () =>
 	currentThemeSettings().xTermTheme ?? {
 		background: currentBackground(),
@@ -183,24 +228,19 @@ const termColors = () => ({
 	color2: currentThemeSettings().color2
 })
 
-createEffect(() => {
-	document.documentElement.style.setProperty('--current-color', currentColor())
-	document.documentElement.style.setProperty(
-		'--current-background',
-		currentBackground()
-	)
-})
-
 export {
 	currentBackground,
 	currentColor,
 	currentTheme,
 	currentThemeName,
-	setTheme,
-	themeSettings,
 	isDark,
+	setTheme,
+	termColors,
+	themeSettings,
 	xTermTheme,
-	termColors
+	baseFontSize,
+	setBaseFontSize,
+	bracketColors
 }
 
 export type { ThemeKey, ThemeSetting }
