@@ -33,7 +33,7 @@ import json from '~/assets/icons/json.svg'
 import xml from '~/assets/icons/xml.svg'
 import yaml from '~/assets/icons/yaml.svg'
 import docker from '~/assets/icons/docker.svg'
-import shell from '~/assets/icons/shell.svg'
+// import shell from '~/assets/icons/shell.svg'
 import typescript_def from '~/assets/icons/typescript-def.svg'
 import cpp from '~/assets/icons/cpp.svg'
 import csharp from '~/assets/icons/csharp.svg'
@@ -79,7 +79,7 @@ const fileExtIconMap = {
 	xml: xml,
 	yaml: yaml,
 	dockerfile: docker,
-	sh: shell,
+	// sh: shell,
 	'd.ts': typescript_def,
 	cpp: cpp,
 	cs: csharp,
@@ -147,7 +147,6 @@ export function FilesystemItem(props: FilesystemItemProps) {
 			/>
 		)
 	const handleClick = () => {
-		console.log('thisPath', thisPath)
 		batch(() => {
 			if (isFolder(props.node) && props.node.nodes.length > 0) {
 				setIsOpen(!isOpen())

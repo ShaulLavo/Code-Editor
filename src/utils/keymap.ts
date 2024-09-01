@@ -6,7 +6,7 @@ import { file } from 'jszip'
 import { useContext } from 'solid-js'
 import { EditorFSContext } from '~/context/FsContext'
 import { formatCode, formatter, getConfigFromExt } from '~/format'
-import { code, setCode } from '~/stores/editorStore'
+// import { code, setCode } from '~/stores/editorStore'
 
 const { currentExtension, fileMap, currentPath, fs } =
 	useContext(EditorFSContext)
@@ -37,7 +37,7 @@ const additonalKeymap = [
 				console.log('no file')
 				return false
 			}
-			console.log('saving', currentPath(), code())
+			// console.log('saving', currentPath(), code())
 			// fileMap.set(currentPath(), code())
 			// fs.writeFile(currentPath(), code())
 			return true

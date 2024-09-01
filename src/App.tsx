@@ -10,6 +10,8 @@
 //TODO: proft
 import { createElementSize } from '@solid-primitives/resize-observer'
 import {
+	For,
+	Show,
 	batch,
 	createEffect,
 	createMemo,
@@ -62,10 +64,32 @@ import {
 } from './stores/themeStore'
 import './xterm.css'
 import { CmdK } from './components/CmdK'
+import { initTsWorker } from './utils/worker'
+import { WorkerShape } from '@valtown/codemirror-ts/worker'
+import { Remote } from 'comlink'
+import ts from 'typescript'
 
+export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
+	null!
 const Main: Component = () => {
-	const { currentPath, fs, loadTabData, saveTabs, currentExtension, fileMap } =
-		useContext(EditorFSContext)
+	const {
+		currentExtension,
+		code,
+		setCode,
+		refetch,
+		traversedNodes,
+		filePath,
+		prettierConfig,
+		isTs,
+		openPaths
+	} = useContext(EditorFSContext)
+
+	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
+	initTsWorker(async tsWorker => {
+		worker = tsWorker
+		console.log('worker ready')
+		setIsWorkerReady(true)
+	})
 
 	const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
 		createSignal<number[]>([0.25, 0.75]),
@@ -85,56 +109,6 @@ const Main: Component = () => {
 	const editorSize = createElementSize(editorContainer)
 	const terminalContainerSize = createElementSize(terminalContainer)
 	const statusBarSize = createElementSize(statusBarRef)
-
-	const [nodes, { refetch, mutate }] = createResource(() =>
-		getFileSystemStructure('root', fs)
-	)
-
-	createResource(() => loadTabData(fileMap))
-	const prettierConfig = () => getConfigFromExt(currentExtension())
-	const currentNode = () =>
-		nodes() ? findItem(currentPath(), nodes()!) : undefined
-	const dirPath = () =>
-		nodes() ? getFirstDirOrParent(currentPath(), nodes()!) : undefined
-
-	const filePath = () => (isFile(currentNode) ? currentPath() : undefined)
-	createEffect(() => {
-		console.log('currentPath', currentPath())
-		console.log('filePath', filePath())
-	})
-	const isTs = () =>
-		extensionMap[currentExtension() as keyof typeof extensionMap] ===
-		'typescript'
-
-	const [code, { mutate: setCode }] = createResource(filePath, async path => {
-		if (!path) return ''
-		if (fileMap.has(path)) {
-			return fileMap.get(path)
-		}
-		let file = (await fs.readFile(sanitizeFilePath(path))) as string
-		if (isTs()) {
-			file = await Formmater.prettier(file, prettierConfig())
-		}
-		fileMap.set(path, file)
-
-		await saveTabs(fileMap.keys()) // promise
-
-		return file
-	})
-	const currentFile = () => fileMap.get(currentPath())
-	const traversedNodes = createMemo(
-		() =>
-			nodes.loading
-				? []
-				: traverseAndSetOpen(
-						nodes()!,
-						currentPath().split('/').filter(Boolean)
-					),
-		[],
-		{
-			equals: () => false
-		}
-	)
 
 	onMount(async () => {
 		document.fonts.ready.then(fontFaceSet => {
@@ -209,9 +183,7 @@ const Main: Component = () => {
 										code={code}
 										setCode={setCode}
 										size={editorSize}
-										currentExtension={currentExtension}
-										prettierConfig={prettierConfig}
-										isTs={isTs}
+										isWorkerReady={isWorkerReady}
 									/>
 								</div>
 							</ResizablePanel>

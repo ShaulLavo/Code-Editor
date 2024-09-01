@@ -4,13 +4,24 @@ import type {
 	ParentProps,
 	VoidProps
 } from 'solid-js'
-import { onCleanup, onMount, splitProps } from 'solid-js'
+import {
+	createEffect,
+	createSignal,
+	onCleanup,
+	onMount,
+	splitProps
+} from 'solid-js'
 
 import type { DialogRootProps } from '@kobalte/core/dialog'
 import * as CommandPrimitive from 'cmdk-solid'
 
 import { cn } from '~/lib/utils'
 import { Dialog, DialogContent } from '~/components/ui/dialog'
+import {
+	createActiveElement,
+	makeActiveElementListener
+} from '@solid-primitives/active-element'
+import { currentThemeName } from '~/stores/themeStore'
 
 const Command: Component<
 	ParentProps<CommandPrimitive.CommandRootProps>
@@ -125,22 +136,27 @@ const CommandSeparator: Component<
 		/>
 	)
 }
+function getSiblings(element: Element): Element[] {
+	const siblings: Element[] = []
+	let sibling = element.parentNode?.firstChild
 
+	while (sibling) {
+		if (sibling.nodeType === 1 && sibling !== element) {
+			siblings.push(sibling as Element)
+		}
+		sibling = sibling.nextSibling
+	}
+
+	return siblings
+}
 const CommandItem: Component<
 	ParentProps<CommandPrimitive.CommandItemProps> & {
 		onHover?: () => void
-		isDefaultSelected?: boolean
 	}
 > = props => {
-	const [local, others] = splitProps(props, ['class', 'isDefaultSelected'])
+	const [local, others] = splitProps(props, ['class'])
 	let commandItemRef: HTMLDivElement = null!
-	console.log(local.isDefaultSelected)
 	onMount(() => {
-		if (local.isDefaultSelected) {
-			commandItemRef.setAttribute('aria-selected', 'true')
-			others.onHover?.()
-		}
-
 		const observer = new MutationObserver(mutations => {
 			mutations.forEach(mutation => {
 				if (mutation.attributeName === 'aria-selected') {
@@ -160,16 +176,19 @@ const CommandItem: Component<
 			attributes: true,
 			attributeFilter: ['aria-selected']
 		})
-
+		if (others.value === currentThemeName()) {
+			commandItemRef.setAttribute('aria-selected', 'true')
+			commandItemRef.setAttribute('data-selected', 'true')
+		}
 		onCleanup(() => {
 			observer.disconnect()
 		})
 	})
-
+	console.log('CommandItem', others.value)
 	return (
 		<CommandPrimitive.CommandItem
 			ref={commandItemRef}
-			cmdk-item=""
+			cmdk-item={others.value ?? ''}
 			class={cn(
 				'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
 				local.class

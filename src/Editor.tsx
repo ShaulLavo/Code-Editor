@@ -68,6 +68,7 @@ import { createInnerZoom } from './hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
 import { autoHide } from './utils/dom'
+import { worker } from './App'
 
 export interface EditorProps {
 	code:
@@ -80,24 +81,19 @@ export interface EditorProps {
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
-	currentExtension: Accessor<string | undefined>
-	prettierConfig: Accessor<Options>
-	isTs: Accessor<boolean>
+	isWorkerReady: Accessor<boolean>
 }
 
-export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
-	null!
 export const Editor = ({
 	code,
 	setCode,
 	defaultTheme,
 	formatOnMount,
 	size,
-	currentExtension,
-	prettierConfig,
-	isTs
+	isWorkerReady
 }: EditorProps) => {
-	const { currentPath, setCurrentPath } = useContext(EditorFSContext)
+	const { currentPath, prettierConfig, currentExtension, isTs } =
+		useContext(EditorFSContext)
 	// useShortcuts(code, setCode, currentExtension)
 
 	const { fontSize } = createInnerZoom({
@@ -105,7 +101,6 @@ export const Editor = ({
 		key: 'editor'
 	})
 	const [editorView, setView] = createSignal<EditorView>(null!)
-	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
 	const start = performance.now()
 	const setupEditor = () => {
 		const baseExtensions = [
@@ -151,7 +146,6 @@ export const Editor = ({
 					setCurrentColumn(main.head - line.from)
 					setEditorHight(Math.max(doc.lines * 13, 13))
 					// if (doc.eq(view.state.doc)) return //??
-					console.log('updating code', doc.toString())
 					setCode(doc.toString(), true)
 				})
 			}
@@ -225,12 +219,12 @@ export const Editor = ({
 
 	onMount(() => {
 		setupEditor()
-		initTsWorker(async tsWorker => {
-			worker = tsWorker
-			setIsWorkerReady(true)
-		})
 	})
-
+	createEffect(() => {
+		if (isWorkerReady()) {
+			console.log('worker ready', worker)
+		}
+	})
 	const buttons = () => parsePathToButtons(currentPath())
 	return (
 		<>

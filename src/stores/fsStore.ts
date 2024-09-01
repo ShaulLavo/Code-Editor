@@ -1,12 +1,23 @@
 import { ReactiveMap } from '@solid-primitives/map'
 import { makePersisted } from '@solid-primitives/storage'
 import { createFs } from 'indexeddb-fs'
-import { Setter, createContext, createSignal } from 'solid-js'
 import {
+	Setter,
+	createContext,
+	createMemo,
+	createResource,
+	createSignal
+} from 'solid-js'
+import {
+	findItem,
+	getFileSystemStructure,
+	getFirstDirOrParent,
+	isFile,
 	restoreFilePath,
-	sanitizeFilePath
+	sanitizeFilePath,
+	traverseAndSetOpen
 } from '~/fileSystem/fileSystem.service'
-import { Formmater, getConfigFromExt } from '~/format'
+import { Formmater, extensionMap, getConfigFromExt } from '~/format'
 
 function createFsStore({
 	name,
@@ -99,6 +110,53 @@ function createFsStore({
 		await fs.writeFile('tabs', JSON.stringify([]))
 		fileMap.clear()
 	}
+
+	const [nodes, { refetch, mutate }] = createResource(() =>
+		getFileSystemStructure('root', fs)
+	)
+
+	createResource(() => loadTabData(fileMap))
+	const currentNode = () =>
+		nodes() ? findItem(currentPath(), nodes()!) : undefined
+	const dirPath = () =>
+		nodes() ? getFirstDirOrParent(currentPath(), nodes()!) : undefined
+
+	const filePath = () => (isFile(currentNode) ? currentPath() : undefined)
+
+	const isTs = () =>
+		extensionMap[currentExtension() as keyof typeof extensionMap] ===
+		'typescript'
+	const prettierConfig = () => getConfigFromExt(currentExtension())
+
+	const [code, { mutate: setCode }] = createResource(filePath, async path => {
+		if (!path) return ''
+		if (fileMap.has(path)) {
+			return fileMap.get(path)
+		}
+		let file = (await fs.readFile(sanitizeFilePath(path))) as string
+		if (isTs()) {
+			file = await Formmater.prettier(file, prettierConfig())
+		}
+		fileMap.set(path, file)
+
+		await saveTabs(fileMap.keys()) // promise
+
+		return file
+	})
+	const currentFile = () => fileMap.get(currentPath())
+	const traversedNodes = createMemo(
+		() =>
+			nodes.loading
+				? []
+				: traverseAndSetOpen(
+						nodes()!,
+						currentPath().split('/').filter(Boolean)
+					),
+		[],
+		{
+			equals: () => false
+		}
+	)
 	return {
 		fs,
 		currentPath,
@@ -109,7 +167,19 @@ function createFsStore({
 		clearTabs,
 		fileMap,
 		openPaths,
-		subscribe
+		subscribe,
+		nodes,
+		refetch,
+		mutate,
+		currentNode,
+		dirPath,
+		code,
+		setCode,
+		currentFile,
+		traversedNodes,
+		filePath,
+		isTs,
+		prettierConfig
 	}
 }
 

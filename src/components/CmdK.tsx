@@ -72,23 +72,20 @@ export const CmdK: Component<HeaderProps> = props => {
 			document.removeEventListener('keydown', down)
 		})
 	})
-
+	createEffect(() => {
+		if (!open()) {
+			setTimeout(() => {
+				setCurrentMenu('base')
+			}, 150)
+		}
+	})
 	return (
 		<div style={{ 'font-family': 'JetBrains Mono' }}>
-			<CommandDialog
-				// style={{ visibility: 'hidden' }}
-
-				open={open()}
-				onOpenChange={isOpen => {
-					if (!isOpen) {
-						setCurrentMenu('base')
-					}
-					setOpen(isOpen)
-				}}
-			>
+			<CommandDialog open={open()} onOpenChange={setOpen}>
 				<Command
 					style={{ color: currentColor(), background: currentBackground() }}
 					class="rounded-lg border shadow-md  h-96"
+					onValueChange={e => console.log(e)}
 				>
 					<CommandInput placeholder="Type a command or search..." />
 					{/* <BaseItems {...props} setCurrentMenu={setCurrentMenu} /> */}
@@ -132,7 +129,6 @@ const BaseItems: Component<BaseItemsProps> = ({
 			<CommandGroup heading="Theme">
 				<CommandItem
 					onSelect={e => {
-						console.log(e)
 						setCurrentMenu('theme')
 					}}
 				>
@@ -209,6 +205,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 interface ThemeItemsProps {
 	setOpen: (open: boolean) => void
 }
+
 const ThemeItems: Component<ThemeItemsProps> = props => {
 	const darkModeThemes = Object.fromEntries(
 		Object.entries(themeSettings).filter(
@@ -221,7 +218,6 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 			([key, value]) => value.mode === 'light'
 		)
 	)
-	console.log(darkModeThemes)
 	return (
 		<CommandList>
 			<CommandGroup heading="Dark mode">
@@ -235,7 +231,9 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								setTheme(theme as ThemeKey)
 								props.setOpen(false)
 							}}
-							isDefaultSelected={currentThemeName() === theme}
+							value={theme}
+
+							// isDefaultSelected={currentThemeName() === theme}
 						>
 							<span>
 								{capitalizeFirstLetter(theme)
@@ -257,7 +255,8 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								setTheme(theme as ThemeKey)
 								props.setOpen(false)
 							}}
-							isDefaultSelected={currentThemeName() === theme}
+							value={theme}
+							// isDefaultSelected={currentThemeName() === theme}
 						>
 							<span>
 								{capitalizeFirstLetter(theme).replace(/([A-Z])/g, ' $1')}
