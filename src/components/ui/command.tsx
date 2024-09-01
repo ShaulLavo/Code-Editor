@@ -127,12 +127,20 @@ const CommandSeparator: Component<
 }
 
 const CommandItem: Component<
-	ParentProps<CommandPrimitive.CommandItemProps> & { onHover?: () => void }
+	ParentProps<CommandPrimitive.CommandItemProps> & {
+		onHover?: () => void
+		isDefaultSelected?: boolean
+	}
 > = props => {
-	const [local, others] = splitProps(props, ['class'])
+	const [local, others] = splitProps(props, ['class', 'isDefaultSelected'])
 	let commandItemRef: HTMLDivElement = null!
-
+	console.log(local.isDefaultSelected)
 	onMount(() => {
+		if (local.isDefaultSelected) {
+			commandItemRef.setAttribute('aria-selected', 'true')
+			others.onHover?.()
+		}
+
 		const observer = new MutationObserver(mutations => {
 			mutations.forEach(mutation => {
 				if (mutation.attributeName === 'aria-selected') {

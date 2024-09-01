@@ -67,6 +67,7 @@ import { EditorFSContext } from './context/FsContext'
 import { createInnerZoom } from './hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
+import { autoHide } from './utils/dom'
 
 export interface EditorProps {
 	code:
@@ -115,18 +116,16 @@ export const Editor = ({
 			indentOnInput(),
 			bracketMatching(),
 			closeBrackets(),
-			gutter({ class: 'gutter' }),
 			rectangularSelection(),
 			highlightActiveLine(),
 			highlightSelectionMatches(),
-			EditorView.lineWrapping,
+			// EditorView.lineWrapping,
 			keymap.of(defaultKeymap),
 			javascript({ jsx: true, typescript: true }),
-			foldGutter({}),
+			// foldGutter({}),
 			bracketMatching(),
 			rainbowBrackets(),
-			highlightActiveLineGutter(),
-			gutter({ class: 'cm-custom-gutter' })
+			highlightActiveLineGutter()
 		] as Extension[]
 		const editorState = EditorState.create({
 			doc: code(),
@@ -158,7 +157,6 @@ export const Editor = ({
 		})
 		view.setState(editorState)
 		setView(view)
-		// autoHide(refs.miniMap)
 		console.log(
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
@@ -186,7 +184,7 @@ export const Editor = ({
 				? {
 						create: () => {
 							const minimap = document.createElement('div')
-							// autoHide(minimap)
+							autoHide(minimap)
 							return { dom: minimap }
 						},
 						showOverlay: 'mouse-over',

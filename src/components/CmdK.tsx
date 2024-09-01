@@ -221,7 +221,7 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 			([key, value]) => value.mode === 'light'
 		)
 	)
-
+	console.log(darkModeThemes)
 	return (
 		<CommandList>
 			<CommandGroup heading="Dark mode">
@@ -235,8 +235,13 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								setTheme(theme as ThemeKey)
 								props.setOpen(false)
 							}}
+							isDefaultSelected={currentThemeName() === theme}
 						>
-							<span>{capitalizeFirstLetter(theme)}</span>
+							<span>
+								{capitalizeFirstLetter(theme)
+									.replace(/([A-Z])/g, ' $1')
+									.trim()}
+							</span>
 						</CommandItem>
 					)}
 				</For>
@@ -252,8 +257,11 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								setTheme(theme as ThemeKey)
 								props.setOpen(false)
 							}}
+							isDefaultSelected={currentThemeName() === theme}
 						>
-							<span>{capitalizeFirstLetter(theme)}</span>
+							<span>
+								{capitalizeFirstLetter(theme).replace(/([A-Z])/g, ' $1')}
+							</span>
 						</CommandItem>
 					)}
 				</For>
