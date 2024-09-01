@@ -10,6 +10,8 @@ import {
 	createResource,
 	createSignal,
 	lazy,
+	on,
+	onMount,
 	useContext
 } from 'solid-js'
 import { currentColor, isDark } from '~/stores/themeStore'
@@ -45,9 +47,8 @@ import image from '~/assets/icons/image.svg'
 import document from '~/assets/icons/document.svg'
 import folder_base from '~/assets/icons/folder-base.svg'
 import folder_base_open from '~/assets/icons/folder-base-open.svg'
-//@ts-ignore
-
-const icons = window.FileIcons
+import { makeEventListener } from '@solid-primitives/event-listener'
+import { createSwapy } from 'swapy'
 
 declare module 'solid-js' {
 	namespace JSX {
@@ -115,7 +116,7 @@ export function FilesystemItem(props: FilesystemItemProps) {
 	const thisPath = `${props.fullPath ?? 'root'}/${props.node.name}`
 	const { currentPath, setCurrentPath } = useContext(EditorFSContext)
 	const ext = () => props.node.name.split('.').pop()
-	//@ts-ignore
+	// @ts-ignore
 	const filePath = () => fileExtIconMap[ext()]
 	const fileIcon = () => {
 		if (filePath()) {
@@ -161,36 +162,49 @@ export function FilesystemItem(props: FilesystemItemProps) {
 			setIsOpen(true)
 		}
 	})
+
+	const [container, setContainer] = createSignal<HTMLLIElement>(null!)
+	createEffect(() => {
+		if (!container()) return
+		const swapy = createSwapy(container())
+	})
 	return (
-		<li>
-			<span
-				style={{ 'font-size': `${props.fontSize}px` }}
-				class={`flex items-center gap-1.5 py-1 px-2 rounded ${
-					currentPath() === thisPath
-						? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20 font-bold text-xs`
-						: 'text-gray-600 text-xs'
-				} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
-				onClick={handleClick}
-			>
-				{isFolder(props.node) && props.node.nodes.length > 0 && (
-					<button class="p-1 -m-1">
-						<VsChevronRight
-							class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
-						/>
-					</button>
-				)}
-				{isFolder(props.node) ? folderIcon() : fileIcon()}
-				{props.node.name}
-			</span>
-			<Show when={isOpen()}>
-				<AutoAnimeListContainer class="pl-6">
-					<For each={isFolder(props.node) && props.node.nodes}>
-						{childNode => (
-							<FilesystemItem {...props} node={childNode} fullPath={thisPath} />
-						)}
-					</For>
-				</AutoAnimeListContainer>
-			</Show>
+		<li ref={setContainer}>
+			<div data-swapy-slot={thisPath}>
+				<span
+					data-swapy-item={thisPath}
+					style={{ 'font-size': `${props.fontSize}px` }}
+					class={`flex items-center gap-1.5 py-1 px-2 rounded select-none ${
+						currentPath() === thisPath
+							? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20 font-bold text-xs`
+							: 'text-gray-600 text-xs'
+					} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
+					onClick={handleClick}
+				>
+					{isFolder(props.node) && props.node.nodes.length > 0 && (
+						<button class="p-1 -m-1">
+							<VsChevronRight
+								class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
+							/>
+						</button>
+					)}
+					{isFolder(props.node) ? folderIcon() : fileIcon()}
+					{props.node.name}
+				</span>
+				<Show when={isOpen()}>
+					<AutoAnimeListContainer class="pl-6">
+						<For each={isFolder(props.node) && props.node.nodes}>
+							{childNode => (
+								<FilesystemItem
+									{...props}
+									node={childNode}
+									fullPath={thisPath}
+								/>
+							)}
+						</For>
+					</AutoAnimeListContainer>
+				</Show>
+			</div>
 		</li>
 	)
 }

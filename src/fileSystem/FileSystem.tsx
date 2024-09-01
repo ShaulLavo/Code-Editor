@@ -27,6 +27,7 @@ export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
 		ref: container,
 		key: 'explorer'
 	})
+
 	return (
 		<div ref={setContainer} class="h-screen">
 			<h5 class="pl-8 text-sm">EXPLORER</h5>
