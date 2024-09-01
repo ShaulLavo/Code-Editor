@@ -151,6 +151,7 @@ export const Editor = ({
 					setCurrentColumn(main.head - line.from)
 					setEditorHight(Math.max(doc.lines * 13, 13))
 					// if (doc.eq(view.state.doc)) return //??
+					console.log('updating code', doc.toString())
 					setCode(doc.toString(), true)
 				})
 			}
