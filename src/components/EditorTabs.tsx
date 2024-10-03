@@ -5,29 +5,31 @@ import {
 	batch,
 	createEffect,
 	createSignal,
+	onMount,
 	useContext,
 	type Component
 } from 'solid-js'
-import { EditorFSContext } from '~/context/FsContext'
 import { currentColor, isDark } from '~/stores/themeStore'
 import { AutoAnimeListContainer } from './AutoAnimatedList'
+import { gsap } from 'gsap'
 
+import { Draggable } from 'gsap/Draggable'
+import { useEditorFS } from '~/context/FsContext'
+
+gsap.registerPlugin(Draggable)
 interface EditorTabsProps {
 	filePath: Accessor<string | undefined>
 }
 
 export const EditorTabs: Component<EditorTabsProps> = ({ filePath }) => {
-	const { openPaths } = useContext(EditorFSContext)
+	const { openPaths } = useEditorFS()
 
 	return (
-		<AutoAnimeListContainer
-			component="div"
-			class="flex overflow-x-auto whitespace-nowrap"
-		>
+		<div class="flex overflow-x-auto whitespace-nowrap z-50 relative">
 			<For each={openPaths()}>
 				{(path, index) => <Tab file={path} filePath={filePath} index={index} />}
 			</For>
-		</AutoAnimeListContainer>
+		</div>
 	)
 }
 
@@ -43,8 +45,24 @@ const Tab = ({
 	const [isHovered, setIsHovered] = createSignal(false)
 	const isSelected = () => filePath() === file
 	const { openPaths, setCurrentPath, fileMap, saveTabs, currentPath } =
-		useContext(EditorFSContext)
+		useEditorFS()
 	let tabRef: HTMLDivElement = null!
+
+	onMount(() => {
+		Draggable.create(tabRef, {
+			// type: 'y',
+			bounds: document.getElementById('root'),
+
+			// inertia: true,
+			onClick: function () {
+				console.log('clicked')
+			},
+			onDragEnd: function () {
+				console.log('drag ended')
+			}
+		})
+	})
+
 	createEffect(() => {
 		if (isSelected()) {
 			tabRef.scrollIntoView({
@@ -54,10 +72,10 @@ const Tab = ({
 			})
 		}
 	})
-
+	//  EditorState.toJSON/fromJSON save with tab data
 	return (
 		<div
-			title={currentPath()}
+			title={filePath()}
 			ref={tabRef}
 			onMouseOver={() => setIsHovered(true)}
 			onMouseOut={() => setIsHovered(false)}
@@ -66,7 +84,7 @@ const Tab = ({
 					setCurrentPath(file)
 				})
 			}}
-			class={`px-4 py-2 focus:outline-none text-sm items-center flex cursor-pointer ${
+			class={`px-4 py-2 focus:outline-none text-sm items-center flex cursor-pointer relative z-50 ${
 				isSelected()
 					? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20`
 					: ''

@@ -11,8 +11,6 @@ import {
 import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom'
 // import { HoverCardContext, StatusBarCtx } from '../StatusBar'
 
-useContext
-
 interface HoverCardProps {
 	trigger: JSX.Element
 	caredContent: JSX.Element

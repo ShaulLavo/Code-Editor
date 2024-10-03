@@ -19,7 +19,7 @@ export function sanitizeFilePath(path: string): string {
 export function restoreFilePath(path: string): string {
 	return path.replace(/__LSB__/g, '[').replace(/__RSB__/g, ']')
 }
-export function isFile(node: Node): node is File {
+export function isFile(node?: Node): node is File {
 	return Boolean(node) && (node as Folder).nodes === undefined
 }
 export function isFolder(node: Node): node is Folder {
@@ -92,9 +92,9 @@ export async function deleteAll(
 	}
 }
 
-//nodes
 export function findItem(path: string, structure: Node[]): Node | undefined {
 	const parts = path.split('/').filter(part => part !== '')
+	parts.shift()
 
 	function search(nodes: Node[], index = 0): Node | undefined {
 		for (const node of nodes) {

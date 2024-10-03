@@ -8,20 +8,25 @@
 //TODO: run the code (quickjs? but polyfill the enterie DOM, just eval?)
 //TODO: ??
 //TODO: proft
-import { createElementSize } from '@solid-primitives/resize-observer'
 import {
-	For,
+	ColorModeProvider,
+	ColorModeScript,
+	createLocalStorageManager,
+	useColorMode
+} from '@kobalte/core'
+import { createElementSize } from '@solid-primitives/resize-observer'
+import { makePersisted } from '@solid-primitives/storage'
+import { WorkerShape } from '@valtown/codemirror-ts/worker'
+import { Remote } from 'comlink'
+import {
 	Show,
-	batch,
 	createEffect,
-	createMemo,
-	createResource,
 	createSignal,
-	onCleanup,
 	onMount,
 	useContext,
 	type Component
 } from 'solid-js'
+import ts from 'typescript'
 import {
 	Resizable,
 	ResizableHandle,
@@ -30,44 +35,23 @@ import {
 import { Editor } from './Editor'
 import { StatusBar } from './StatusBar'
 import { Terminal } from './Terminal'
+import { CmdK } from './components/CmdK'
 import { EditorTabs } from './components/EditorTabs'
-import { Header } from './components/Header'
+import {
+	EditorFSProvider,
+	TerminalFSProvider,
+	useEditorFS
+} from './context/FsContext'
 import { FileSystem } from './fileSystem/FileSystem'
 import {
-	findItem,
-	getFileSystemStructure,
-	getFirstDirOrParent,
-	isFile,
-	sanitizeFilePath,
-	traverseAndSetOpen
-} from './fileSystem/fileSystem.service'
-import { toast } from 'solid-sonner'
-import {
-	ColorModeProvider,
-	ColorModeScript,
-	createLocalStorageManager,
-	useColorMode
-} from '@kobalte/core'
-import { makePersisted } from '@solid-primitives/storage'
-import {
-	EditorFSContext,
-	EditorFSProvider,
-	TerminalFSProvider
-} from './context/FsContext'
-import { Formmater, extensionMap, getConfigFromExt } from './format'
-import {
 	baseFontSize,
+	bracketColors,
 	currentBackground,
 	currentColor,
-	isDark,
-	bracketColors
+	isDark
 } from './stores/themeStore'
-import './xterm.css'
-import { CmdK } from './components/CmdK'
 import { initTsWorker } from './utils/worker'
-import { WorkerShape } from '@valtown/codemirror-ts/worker'
-import { Remote } from 'comlink'
-import ts from 'typescript'
+import './xterm.css'
 
 export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
 	null!
@@ -82,7 +66,7 @@ const Main: Component = () => {
 		prettierConfig,
 		isTs,
 		openPaths
-	} = useContext(EditorFSContext)
+	} = useEditorFS()
 
 	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
 	initTsWorker(async tsWorker => {
@@ -177,15 +161,16 @@ const Main: Component = () => {
 								class="overflow-hidden"
 								initialSize={verticalPanelSize()[0]}
 							>
-								<div class="">
+								<Show when={filePath()}>
 									<EditorTabs filePath={filePath} />
+
 									<Editor
 										code={code}
 										setCode={setCode}
 										size={editorSize}
 										isWorkerReady={isWorkerReady}
 									/>
-								</div>
+								</Show>
 							</ResizablePanel>
 							<ResizableHandle
 								class={isDark() ? 'bg-gray-800' : 'bg-gray-200'}

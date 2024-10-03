@@ -70,6 +70,7 @@
 		"comlink": "^4.4.1",
 		"dnd-tree-view": "^4.0.2",
 		"file-icons-js": "github:websemantics/file-icons-js",
+		"gsap": "^3.12.5",
 		"hotkeys-js": "^3.13.7",
 		"indexeddb-fs": "^2.1.5",
 		"isomorphic-git": "^1.27.1",

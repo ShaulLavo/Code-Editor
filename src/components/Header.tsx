@@ -1,7 +1,6 @@
 import { For, Resource, batch, useContext, type Component } from 'solid-js'
 import ts from 'typescript'
 import { compilerOptions } from '~/constants/constants'
-import { EditorFSContext } from '~/context/FsContext'
 import { demoNodes, nextApp } from '../constants/demo/nodes'
 import {
 	createFileSystemStructure,
@@ -18,6 +17,7 @@ import {
 	themeSettings
 } from '../stores/themeStore'
 import { capitalizeFirstLetter } from '../utils/string'
+import { useEditorFS } from '~/context/FsContext'
 
 interface HeaderProps {
 	code: Resource<string | undefined>
@@ -34,7 +34,7 @@ export const Header: Component<HeaderProps> = ({
 }) => {
 	let hasTitle = false
 	const { fs, currentExtension, setCurrentPath, clearTabs, fileMap } =
-		useContext(EditorFSContext)
+		useEditorFS()
 
 	return (
 		<div

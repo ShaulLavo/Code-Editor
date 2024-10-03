@@ -146,6 +146,9 @@ importers:
       file-icons-js:
         specifier: github:websemantics/file-icons-js
         version: https://codeload.github.com/websemantics/file-icons-js/tar.gz/8b397223dc14fa57600f1b06c787dfd2107c4449
+      gsap:
+        specifier: ^3.12.5
+        version: 3.12.5
       hotkeys-js:
         specifier: ^3.13.7
         version: 3.13.7
@@ -1336,6 +1339,9 @@ packages:
   globby@13.2.2:
     resolution: {integrity: sha512-Y1zNGV+pzQdh7H39l9zgB4PJqjRNqydvdYCDG4HFXM4XuvSaQQlEc91IU1yALL8gUTDomgBAfz3XJdmUS+oo0w==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  gsap@3.12.5:
+    resolution: {integrity: sha512-srBfnk4n+Oe/ZnMIOXt3gT605BX9x5+rh/prT2F1SsNJsU1XuMiP0E2aptW481OnonOGACZWBqseH5Z7csHxhQ==}
 
   has-flag@3.0.0:
     resolution: {integrity: sha512-sKJf1+ceQBr4SMkvQnBDNDtf4TXpVhVGateu0t918bl30FnbE2m4vNLX+VWe/dpjlb+HugGYzW7uQXH98HPEYw==}
@@ -3368,6 +3374,8 @@ snapshots:
       ignore: 5.3.2
       merge2: 1.4.1
       slash: 4.0.0
+
+  gsap@3.12.5: {}
 
   has-flag@3.0.0: {}
 

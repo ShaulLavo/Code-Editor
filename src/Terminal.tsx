@@ -2,200 +2,195 @@ import { ClipboardAddon } from '@xterm/addon-clipboard'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
 import { Terminal as Xterm } from '@xterm/xterm'
-import minimist from 'minimist'
-import {
-	Accessor,
-	createEffect,
-	createSignal,
-	on,
-	onMount,
-	type Component,
-	createResource,
-	Resource
-} from 'solid-js'
-import { Readline } from 'xterm-readline'
-import { Node } from './fileSystem/fileSystem.service'
-import { terminalFS } from './stores/fsStore'
-import { xTermTheme } from './stores/themeStore'
-import './xterm.css'
 import { Buffer } from 'buffer'
-window.Buffer = Buffer
 import git from 'isomorphic-git'
 import http from 'isomorphic-git/http/web'
-import NodeFs, { NodeFsAdapter } from './fileSystem/nodeFs'
-const { setCurrentPath, currentPath, fs } = terminalFS
-
-import { configure, InMemory, fs as bFs } from '@zenfs/core'
-import { IndexedDB } from '@zenfs/dom'
-import { setIsGitLoading } from './stores/editorStore'
-import { createInnerZoom } from './hooks/createInnerZoom'
+import minimist from 'minimist'
 import {
-	NullableSize,
-	createElementSize
-} from '@solid-primitives/resize-observer'
-import { size } from '@floating-ui/core'
+	createEffect,
+	createResource,
+	createSignal,
+	onMount,
+	Resource,
+	type Component
+} from 'solid-js'
+import { Readline } from 'xterm-readline'
+import { xTermTheme } from './stores/themeStore'
+import './xterm.css'
+window.Buffer = Buffer
 
-const createBrowserFS = async () => {
-	await configure({
-		mounts: {
-			'/git': IndexedDB
-		}
-	})
-	return bFs.promises
-}
-
-async function cd(filesystem: any, path: string): Promise<void> {
-	let newPath: string
-
-	if (path === '.') {
-		newPath = currentPath()
-	} else if (path === '..') {
-		const segments = currentPath().split('/')
-		if (segments.length > 1) {
-			segments.pop()
-			newPath = segments.join('/')
-			if (newPath === '' || newPath === '/') {
-				newPath = 'root'
-			}
-		} else {
-			newPath = 'root'
-		}
-	} else {
-		if (path.startsWith('/')) {
-			newPath = `root${path}`
-		} else if (!path.startsWith('root/')) {
-			newPath = `${currentPath()}/${path}`
-		} else {
-			newPath = path
-		}
-		newPath = resolvePath(newPath)
-	}
-
-	if (await filesystem.isDirectory(newPath)) {
-		setCurrentPath(newPath)
-	} else {
-		throw new Error(`cd: ${path}: No such directory`)
-	}
-}
-async function ls(path: string = currentPath()): Promise<string> {
-	const directoryContents = await fs.readDirectory(resolvePath(path))
-
-	const filesAndDirectories = [
-		...directoryContents.directories.map(dir => `${dir.name}/`),
-		...directoryContents.files.map(file => file.name)
-	]
-
-	const maxLength = Math.max(...filesAndDirectories.map(item => item.length), 0)
-
-	const terminalWidth = 80
-	const columnWidth = maxLength + 2
-	const numColumns = Math.floor(terminalWidth / columnWidth)
-
-	// Format the output
-	let formattedOutput = ''
-	filesAndDirectories.forEach((item, index) => {
-		formattedOutput += item.padEnd(columnWidth)
-		if ((index + 1) % numColumns === 0) {
-			formattedOutput += '\n'
-		}
-	})
-
-	return formattedOutput.trimEnd()
-}
-
-function pwd(): string {
-	return currentPath()
-}
-
-async function mkdir(filesystem: any, path: string): Promise<void> {
-	const fullPath = resolvePath(path)
-	await filesystem.createDirectory(fullPath)
-}
-
-async function touch(filesystem: any, path: string): Promise<void> {
-	const fullPath = resolvePath(path)
-	await filesystem.writeFile(fullPath, '')
-}
-
-async function rm(filesystem: any, path: string): Promise<void> {
-	const fullPath = resolvePath(path)
-	if (await filesystem.isDirectory(fullPath)) {
-		await filesystem.removeDirectory(fullPath)
-	} else if (await filesystem.isFile(fullPath)) {
-		await filesystem.removeFile(fullPath)
-	} else {
-		throw new Error(`rm: ${path}: No such file or directory`)
-	}
-}
-
-async function mv(source: string, destination: string): Promise<void> {
-	const sourcePath = resolvePath(source)
-	const destinationPath = resolvePath(destination)
-	await fs.moveFile(sourcePath, destinationPath)
-}
-
-async function cp(source: string, destination: string): Promise<void> {
-	const sourcePath = resolvePath(source)
-	const destinationPath = resolvePath(destination)
-	await fs.copyFile(sourcePath, destinationPath)
-}
-
-function resolvePath(path: string): string {
-	if (path === '/') {
-		return 'root'
-	}
-	if (path.endsWith('/')) {
-		path = path.slice(0, -1)
-	}
-	if (path.startsWith('/')) {
-		path = path.slice(1)
-	}
-	return path
-}
-
-async function typeEffect(rl: any, text: string, delay: number = 100) {
-	for (let i = 0; i < text.length; i++) {
-		rl.write(text.charAt(i))
-		const randomDelay = delay + Math.floor(Math.random() * 50 - 25) // Adding randomness to the delay
-		await new Promise(resolve => setTimeout(resolve, randomDelay))
-	}
-	rl.write('\r\n')
-}
-async function clone(gitFs: Resource<typeof bFs.promises>) {
-	if (gitFs.loading) return
-	try {
-		await git.clone({
-			fs: gitFs()!,
-			http,
-			dir: '/',
-			corsProxy: 'https://cors.isomorphic-git.org',
-			url: 'https://github.com/ShaulLavo/Code-Editor.git',
-			ref: 'main',
-			singleBranch: true,
-			depth: 1
-		})
-	} catch (e) {
-		console.log(e)
-	}
-}
-async function log(gitFs: Resource<typeof bFs.promises>) {
-	if (gitFs.loading) return
-	try {
-		const commits = await git.log({ fs: gitFs()!, dir: '/' })
-		console.log(commits)
-	} catch (e) {
-		console.log(e)
-	}
-}
-async function init(gitFs: Resource<typeof bFs.promises>) {
-	await git.init({ fs: gitFs()!, dir: '/' })
-}
+import { NullableSize } from '@solid-primitives/resize-observer'
+import { fs as bFs, configure } from '@zenfs/core'
+import { IndexedDB } from '@zenfs/dom'
+import { useTerminalFS } from './context/FsContext'
+import { createInnerZoom } from './hooks/createInnerZoom'
 
 interface XtermProps {
 	size: Readonly<NullableSize>
 }
 
 export const Terminal: Component<XtermProps> = props => {
+	const { setCurrentPath, currentPath, fs } = useTerminalFS()
+
+	const createBrowserFS = async () => {
+		await configure({
+			mounts: {
+				'/git': IndexedDB
+			}
+		})
+		return bFs.promises
+	}
+
+	async function cd(filesystem: any, path: string): Promise<void> {
+		let newPath: string
+
+		if (path === '.') {
+			newPath = currentPath()
+		} else if (path === '..') {
+			const segments = currentPath().split('/')
+			if (segments.length > 1) {
+				segments.pop()
+				newPath = segments.join('/')
+				if (newPath === '' || newPath === '/') {
+					newPath = 'root'
+				}
+			} else {
+				newPath = 'root'
+			}
+		} else {
+			if (path.startsWith('/')) {
+				newPath = `root${path}`
+			} else if (!path.startsWith('root/')) {
+				newPath = `${currentPath()}/${path}`
+			} else {
+				newPath = path
+			}
+			newPath = resolvePath(newPath)
+		}
+
+		if (await filesystem.isDirectory(newPath)) {
+			setCurrentPath(newPath)
+		} else {
+			throw new Error(`cd: ${path}: No such directory`)
+		}
+	}
+	async function ls(path: string = currentPath()): Promise<string> {
+		const directoryContents = await fs.readDirectory(resolvePath(path))
+
+		const filesAndDirectories = [
+			...directoryContents.directories.map(dir => `${dir.name}/`),
+			...directoryContents.files.map(file => file.name)
+		]
+
+		const maxLength = Math.max(
+			...filesAndDirectories.map(item => item.length),
+			0
+		)
+
+		const terminalWidth = 80
+		const columnWidth = maxLength + 2
+		const numColumns = Math.floor(terminalWidth / columnWidth)
+
+		// Format the output
+		let formattedOutput = ''
+		filesAndDirectories.forEach((item, index) => {
+			formattedOutput += item.padEnd(columnWidth)
+			if ((index + 1) % numColumns === 0) {
+				formattedOutput += '\n'
+			}
+		})
+
+		return formattedOutput.trimEnd()
+	}
+
+	function pwd(): string {
+		return currentPath()
+	}
+
+	async function mkdir(filesystem: any, path: string): Promise<void> {
+		const fullPath = resolvePath(path)
+		await filesystem.createDirectory(fullPath)
+	}
+
+	async function touch(filesystem: any, path: string): Promise<void> {
+		const fullPath = resolvePath(path)
+		await filesystem.writeFile(fullPath, '')
+	}
+
+	async function rm(filesystem: any, path: string): Promise<void> {
+		const fullPath = resolvePath(path)
+		if (await filesystem.isDirectory(fullPath)) {
+			await filesystem.removeDirectory(fullPath)
+		} else if (await filesystem.isFile(fullPath)) {
+			await filesystem.removeFile(fullPath)
+		} else {
+			throw new Error(`rm: ${path}: No such file or directory`)
+		}
+	}
+
+	async function mv(source: string, destination: string): Promise<void> {
+		const sourcePath = resolvePath(source)
+		const destinationPath = resolvePath(destination)
+		await fs.moveFile(sourcePath, destinationPath)
+	}
+
+	async function cp(source: string, destination: string): Promise<void> {
+		const sourcePath = resolvePath(source)
+		const destinationPath = resolvePath(destination)
+		await fs.copyFile(sourcePath, destinationPath)
+	}
+
+	function resolvePath(path: string): string {
+		if (path === '/') {
+			return 'root'
+		}
+		if (path.endsWith('/')) {
+			path = path.slice(0, -1)
+		}
+		if (path.startsWith('/')) {
+			path = path.slice(1)
+		}
+		return path
+	}
+
+	async function typeEffect(rl: any, text: string, delay: number = 100) {
+		for (let i = 0; i < text.length; i++) {
+			rl.write(text.charAt(i))
+			const randomDelay = delay + Math.floor(Math.random() * 50 - 25) // Adding randomness to the delay
+			await new Promise(resolve => setTimeout(resolve, randomDelay))
+		}
+		rl.write('\r\n')
+	}
+	async function clone(gitFs: Resource<typeof bFs.promises>) {
+		if (gitFs.loading) return
+		try {
+			await git.clone({
+				fs: gitFs()!,
+				http,
+				dir: '/',
+				corsProxy: 'https://cors.isomorphic-git.org',
+				url: 'https://github.com/ShaulLavo/Code-Editor.git',
+				ref: 'main',
+				singleBranch: true,
+				depth: 1
+			})
+		} catch (e) {
+			console.log(e)
+		}
+	}
+	async function log(gitFs: Resource<typeof bFs.promises>) {
+		if (gitFs.loading) return
+		try {
+			const commits = await git.log({ fs: gitFs()!, dir: '/' })
+			console.log(commits)
+		} catch (e) {
+			console.log(e)
+		}
+	}
+	async function init(gitFs: Resource<typeof bFs.promises>) {
+		await git.init({ fs: gitFs()!, dir: '/' })
+	}
+
 	const [gitFs] = createResource(createBrowserFS)
 
 	const [ref, setRef] = createSignal<HTMLDivElement>(null!)

@@ -32,7 +32,7 @@ import {
 } from '~/components/ui/command'
 import { compilerOptions } from '~/constants/constants'
 import { demoNodes, nextApp } from '~/constants/demo/nodes'
-import { EditorFSContext } from '~/context/FsContext'
+import { useEditorFS } from '~/context/FsContext'
 import {
 	createFileSystemStructure,
 	deleteAll
@@ -121,7 +121,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 	setOpen
 }) => {
 	const { fs, currentExtension, setCurrentPath, clearTabs, fileMap } =
-		useContext(EditorFSContext)
+		useEditorFS()
 	return (
 		<CommandList>
 			<CommandEmpty>No results found.</CommandEmpty>

@@ -13,8 +13,8 @@ import {
 import { FilesystemItem } from './FilesystemItem'
 import { Node } from './fileSystem.service'
 import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
-import { EditorFSContext } from '~/context/FsContext'
 import { createInnerZoom } from '~/hooks/createInnerZoom'
+import { makeEventListenerStack } from '@solid-primitives/event-listener'
 
 interface FileSystemProps {
 	traversedNodes: () => Node[]
@@ -29,17 +29,15 @@ export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
 	})
 
 	return (
-		<div ref={setContainer} class="h-screen">
+		<div ref={setContainer} class="h-screen relative z-50">
 			<h5 class="pl-8 text-sm">EXPLORER</h5>
-			<div class="flex flex-row">
-				<Suspense fallback={'loading...'}>
-					<AutoAnimeListContainer ref={list}>
-						<For each={traversedNodes()}>
-							{node => <FilesystemItem node={node} fontSize={fontSize()} />}
-						</For>
-					</AutoAnimeListContainer>
-				</Suspense>
-			</div>
+			<Suspense fallback={'loading...'}>
+				<ul ref={list}>
+					<For each={traversedNodes()}>
+						{node => <FilesystemItem node={node} fontSize={fontSize()} />}
+					</For>
+				</ul>
+			</Suspense>
 		</div>
 	)
 }

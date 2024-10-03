@@ -125,6 +125,16 @@
 	src: url('./assets/fonts/JetBrainsMonoNerdFontMono-Regular.ttf');
 }
 
+/* Hide scrollbars for all browsers */
+* {
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+	display: none; /* Chrome, Safari, and Opera */
+}
+
 .cm-scroller {
 	font-family: 'JetBrains Mono', monospace !important;
 }

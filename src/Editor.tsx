@@ -4,7 +4,8 @@ import { javascript } from '@codemirror/lang-javascript'
 import {
 	bracketMatching,
 	foldGutter,
-	indentOnInput
+	indentOnInput,
+	foldState
 } from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
 import { EditorState, Extension } from '@codemirror/state'
@@ -55,7 +56,6 @@ import {
 	showLineNumber
 } from './stores/editorStore'
 import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
-import { defaultKeymap } from './utils/keymap'
 
 import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
@@ -63,21 +63,20 @@ import ts from 'typescript'
 import { initTsWorker } from './utils/worker'
 
 import { Options } from 'prettier'
-import { EditorFSContext } from './context/FsContext'
 import { createInnerZoom } from './hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
 import { autoHide } from './utils/dom'
 import { worker } from './App'
+import { useEditorFS } from './context/FsContext'
+import { createKeymap } from './utils/keymap'
 
 export interface EditorProps {
 	code:
 		| Accessor<string>
 		| Resource<string | undefined>
 		| (() => string | undefined)
-	setCode:
-		| Setter<string | undefined>
-		| ((code: string, shouldSkip?: boolean) => void)
+	setCode: Setter<string | undefined>
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
@@ -92,8 +91,9 @@ export const Editor = ({
 	size,
 	isWorkerReady
 }: EditorProps) => {
-	const { currentPath, prettierConfig, currentExtension, isTs } =
-		useContext(EditorFSContext)
+	const editorFS = useEditorFS()
+	const { currentPath, prettierConfig, currentExtension, isTs, filePath } =
+		editorFS
 	// useShortcuts(code, setCode, currentExtension)
 
 	const { fontSize } = createInnerZoom({
@@ -102,7 +102,10 @@ export const Editor = ({
 	})
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const start = performance.now()
+	// editorView().state.toJSON({foldState})
 	const setupEditor = () => {
+		const defaultKeymap = createKeymap(editorFS)
+
 		const baseExtensions = [
 			highlightSpecialChars(),
 			history(),
@@ -146,7 +149,7 @@ export const Editor = ({
 					setCurrentColumn(main.head - line.from)
 					setEditorHight(Math.max(doc.lines * 13, 13))
 					// if (doc.eq(view.state.doc)) return //??
-					setCode(doc.toString(), true)
+					setCode(doc.toString())
 				})
 			}
 		})
@@ -156,14 +159,13 @@ export const Editor = ({
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
 
-		formatOnMount?.() && formatCode(prettierConfig())
+		formatOnMount?.() && formatCode(prettierConfig(), code, setCode)
 		defaultTheme && setTheme(defaultTheme)
 
 		return view
 	}
-	const parsePathToButtons = (path: string) => {
-		const parts = path.split('/').filter(part => part !== '')
-
+	const parsePathToButtons = (path?: string) => {
+		const parts = path?.split('/').filter(part => part !== '')
 		return parts
 	}
 
@@ -189,10 +191,10 @@ export const Editor = ({
 		})
 	)
 	createExtention(() => {
-		if (!isWorkerReady() || !worker || !isTs()) return []
+		if (!isWorkerReady() || !worker || !isTs() || !filePath()) return []
 
 		const tsExtensions = [
-			tsFacetWorker.of({ worker, path: currentPath() }),
+			tsFacetWorker.of({ worker, path: filePath()! }),
 			tsSyncWorker(),
 			tsLinterWorker(),
 			tsHoverWorker()
@@ -225,7 +227,11 @@ export const Editor = ({
 			console.log('worker ready', worker)
 		}
 	})
-	const buttons = () => parsePathToButtons(currentPath())
+	createEffect(() => {
+		console.log(filePath())
+	})
+	const buttons = () => parsePathToButtons(filePath())
+
 	return (
 		<>
 			<div class="text-xs">
@@ -238,7 +244,7 @@ export const Editor = ({
 									/* noop */
 								}}
 							>
-								{part + (index() === buttons().length - 1 ? '' : ' >')}
+								{part + (index() === buttons?.()!.length - 1 ? '' : ' >')}
 							</button>{' '}
 						</span>
 					)}

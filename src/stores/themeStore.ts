@@ -55,6 +55,27 @@ import {
 	xTermPoimandresTheme
 } from '../themes/poimandres'
 import { useColorMode } from '@kobalte/core'
+import {
+	dark,
+	darkBracketColors,
+	darkColors,
+	light,
+	lightColors,
+	xTermDarkTheme,
+	xTermlightTheme
+} from '~/themes/light'
+import { Extension } from '@codemirror/state'
+
+type ThemeSettingType = {
+	theme: Extension
+	background: string
+	color: string
+	mode: 'light' | 'dark'
+	xTermTheme: any
+	color1: string
+	color2: string
+	rainbowBracket: Record<string, string>
+}
 
 const themeSettings = {
 	xcodeDark: {
@@ -143,7 +164,6 @@ const themeSettings = {
 		color: '#787c99',
 		mode: 'dark',
 		xTermTheme: xTermTokyoNightTheme,
-		themeName: 'xTermTokyoNightTheme',
 		color1: '\x1b[38;2;255;83;112m',
 		color2: '\x1b[38;2;122;162;247m',
 		rainbowBracket: tokyoNightBracketColors
@@ -178,6 +198,27 @@ const themeSettings = {
 		color2: '\x1b[38;2;173;215;255m',
 		rainbowBracket: poimandresBracketColors
 	},
+	light: {
+		theme: light,
+		background: lightColors.background,
+		color: lightColors.foreground,
+		mode: 'light',
+		xTermTheme: xTermlightTheme,
+		color1: '\x1b[38;2;208;103;157m',
+		color2: '\x1b[38;2;173;215;253m',
+		rainbowBracket: lightColors
+	},
+	dark: {
+		theme: dark,
+		background: darkColors.background,
+		color: darkColors.text,
+		mode: 'dark',
+		xTermTheme: xTermDarkTheme,
+		color1: '\x1b[38;2;208;103;157m',
+		color2: '\x1b[38;2;173;215;253m',
+		rainbowBracket: darkBracketColors
+	},
+
 	defaultLight: {
 		theme: [],
 		background: 'white',
@@ -196,7 +237,7 @@ const themeSettings = {
 			violet: 'magenta'
 		}
 	}
-} as const
+} as const satisfies Record<string, ThemeSettingType>
 
 type ThemeKey = keyof typeof themeSettings
 type ThemeSetting = (typeof themeSettings)[ThemeKey]

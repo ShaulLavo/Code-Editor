@@ -4,12 +4,11 @@ import { format as prettier } from 'prettier/standalone'
 import babel from 'prettier/plugins/babel.js'
 import prettierPluginJson from 'prettier-plugin-json-formats'
 import { js_beautify } from 'js-beautify'
-import { createSignal, useContext } from 'solid-js'
+import { Accessor, createSignal, Resource, Setter, useContext } from 'solid-js'
 import { BuiltInParserName, Options } from 'prettier'
 import ts from 'typescript'
-import { EditorFSContext } from './context/FsContext'
+import { useEditorFS } from './context/FsContext'
 
-const { code, setCode } = useContext(EditorFSContext)
 const deafultConfig = {
 	typescript: {
 		parser: 'typescript',
@@ -51,7 +50,7 @@ export const Formmater = {
 			if (!code || !config) return code
 			return await prettier(code, config)
 		} catch (e) {
-			console.log(e)
+			// console.log(e)
 			return code
 		}
 	}
@@ -64,7 +63,11 @@ export const [formmaterName, setFormmater] =
 	createSignal<keyof typeof Formmater>('prettier')
 export const formatter = () => Formmater[formmaterName()]
 
-export const formatCode = async (config: Options) => {
+export const formatCode = async (
+	config: Options,
+	code: Accessor<string | undefined> | Resource<string | undefined>,
+	setCode: Setter<string | undefined>
+) => {
 	const formatted = await formatter()(code()!, config)
 	setCode(formatted)
 }
