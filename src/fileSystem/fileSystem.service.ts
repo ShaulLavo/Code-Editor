@@ -1,116 +1,124 @@
-import { ICreateFsOutput } from 'indexeddb-fs'
+import { ReactiveMap } from '@solid-primitives/map'
+import { DemoNode } from '~/constants/demo/nodes'
+import { Formmater, getConfigFromExt } from '~/format'
+import { Document, Folder, OPFS } from '~/FS/OPFS'
 
-type File = {
-	name: string
-	content?: string
-}
-type Folder = {
-	name: string
-	nodes: Node[]
-	isOpen?: boolean
-}
-export type Node = File | Folder
-
-//helpers
-export function sanitizeFilePath(path: string): string {
-	return path.replace(/\[/g, '__LSB__').replace(/\]/g, '__RSB__')
-}
+export type Node = (Folder | Document) & { isOpen?: boolean }
 
 export function restoreFilePath(path: string): string {
 	return path.replace(/__LSB__/g, '[').replace(/__RSB__/g, ']')
 }
-export function isFile(node?: Node): node is File {
-	return Boolean(node) && (node as Folder).nodes === undefined
+export function isFile(node?: Node): node is Document {
+	return Boolean(node) && (node as Document).type === 'file'
 }
-export function isFolder(node: Node): node is Folder {
-	return (node as Folder)?.nodes !== undefined
-}
-
-//debug
-export async function getFileSystemStructure(
-	dirPath: string,
-	fs: ICreateFsOutput
-): Promise<Node[]> {
-	let dirents = await fs.readDirectory(dirPath)
-
-	const directoryPromises = dirents.directories.map(async dir => {
-		const fullPath = `${dirPath}/${dir.name}`
-		const children = await getFileSystemStructure(fullPath, fs)
-		return { name: restoreFilePath(dir.name), nodes: children }
-	})
-
-	const filePromises = dirents.files.map(async file => {
-		return {
-			name: restoreFilePath(file.name)
-		}
-	})
-
-	const nodes = await Promise.all(filePromises.concat(directoryPromises))
-
-	return nodes
+export function isFolder(node: Node | any): node is Folder {
+	return (node as Folder)?.children !== undefined
 }
 
 export async function createFileSystemStructure(
-	nodes: Node[],
-	fs: ICreateFsOutput,
+	nodes: Array<DemoNode>,
+	fs: OPFS,
 	basePath = '',
 	isRootCall = true
 ): Promise<void> {
 	let start = isRootCall ? performance.now() : 0
 	for (const node of nodes) {
-		const currentPath = sanitizeFilePath(basePath + '/' + node.name)
+		const currentPath = basePath + '/' + node.name
 		if (isFolder(node)) {
 			try {
 				await fs.createDirectory(currentPath)
 			} catch (err) {
 				console.error(`Error creating directory ${currentPath}:`, err)
 			}
-			await createFileSystemStructure(node.nodes, fs, currentPath, false)
+			await createFileSystemStructure(
+				node.children as DemoNode[],
+				fs,
+				currentPath,
+				false
+			)
 		} else {
 			try {
-				await fs.writeFile(currentPath, node.content ?? '')
+				//@ts-ignore
+				await fs.write(currentPath, node.content ?? '')
 			} catch (err) {
 				console.error(`Error creating file ${currentPath}:`, err)
 			}
 		}
 	}
 	if (isRootCall)
-		console.log('createFileSystemStructure', performance.now() - start)
+		console.info('createFileSystemStructure', performance.now() - start)
 }
 
-export async function deleteAll(
-	directoryPath: string,
-	fs: ICreateFsOutput
-): Promise<void> {
-	const dirents = await fs.readDirectory(sanitizeFilePath(directoryPath))
+export function findNode(path: string, structure: Node[]): Node | undefined {
+	const parts = path.split('/').filter(Boolean)
 
-	for (const dirent of dirents.directories) {
-		await fs.removeDirectory(directoryPath + '/' + dirent.name)
-	}
-	for (const dirent of dirents.files) {
-		await fs.removeFile(directoryPath + '/' + dirent.name)
-	}
-}
+	function search(nodes: Node[] | undefined, index = 0): Node | undefined {
+		if (!nodes || nodes.length === 0) return undefined
 
-export function findItem(path: string, structure: Node[]): Node | undefined {
-	const parts = path.split('/').filter(part => part !== '')
-	parts.shift()
-
-	function search(nodes: Node[], index = 0): Node | undefined {
 		for (const node of nodes) {
 			if (node.name === parts[index]) {
 				if (index === parts.length - 1) {
 					return node
 				}
-				if (isFolder(node)) {
-					return search(node.nodes, index + 1)
+				if (isFolder(node) && node.children?.length) {
+					const result = search(node.children, index + 1)
+					if (result) return result
 				}
 			}
 		}
+
 		return undefined
 	}
 
-	return search(structure, 0)
+	return search(structure)
+}
+
+export function moveNode(
+	structure: Node[],
+	fromPath: string,
+	toPath: string
+): Node[] {
+	const nodeToMove = findNode(fromPath, structure)
+	if (!nodeToMove) {
+		throw new Error(`Node not found at ${fromPath}`)
+	}
+
+	const destinationFolder = findNode(toPath, structure)
+	if (!destinationFolder || destinationFolder.type !== 'directory') {
+		throw new Error(`Destination path ${toPath} is invalid or not a directory.`)
+	}
+
+	removeNode(fromPath, structure)
+	destinationFolder.children.push(nodeToMove)
+
+	return structuredClone(structure)
+}
+
+function removeNode(path: string, structure: Node[]): void {
+	const parts = path.split('/').filter(part => part !== '')
+
+	function searchAndRemove(nodes: Node[], index = 0): boolean {
+		const nodeIndex = nodes.findIndex(node => node.name === parts[index])
+
+		if (nodeIndex === -1) return false
+
+		const node = nodes[nodeIndex]
+
+		if (index === parts.length - 1) {
+			nodes.splice(nodeIndex, 1)
+			return true
+		}
+
+		if (isFolder(node)) {
+			return searchAndRemove(node.children, index + 1)
+		}
+
+		return false
+	}
+
+	if (!searchAndRemove(structure, 0)) {
+		throw new Error(`Failed to remove node at ${path}`)
+	}
 }
 
 export function getFirstDirOrParent(
@@ -132,7 +140,7 @@ export function getFirstDirOrParent(
 				}
 				if (isFolder(node)) {
 					// Continue searching down the tree, passing the current node as the parent
-					return search(node.nodes, index + 1, node)
+					return search(node.children, index + 1, node)
 				}
 			}
 		}
@@ -143,13 +151,19 @@ export function getFirstDirOrParent(
 }
 
 export function traverseAndSetOpen(nodes: Node[], path: string[]): Node[] {
+	if (!nodes) return []
+	nodes.sort((a, b) => {
+		if (isFolder(a) && !isFolder(b)) return -1
+		if (!isFolder(a) && isFolder(b)) return 1
+		return a.name.localeCompare(b.name)
+	})
 	for (const node of nodes) {
 		if (node.name === path[0]) {
 			if (path.length === 1) {
 				// node.isOpen = true
 				return nodes
 			}
-			if (isFolder(node) && traverseAndSetOpen(node.nodes, path.slice(1))) {
+			if (isFolder(node) && traverseAndSetOpen(node.children, path.slice(1))) {
 				node.isOpen = true
 				return nodes
 			}
@@ -157,4 +171,49 @@ export function traverseAndSetOpen(nodes: Node[], path: string[]): Node[] {
 	}
 
 	return nodes
+}
+
+export const saveTabs = async (
+	tabIter: IterableIterator<string> | string[],
+	fs: OPFS,
+	tabKey: string
+) => {
+	const tabs = Array.from(tabIter)
+	await fs.write(tabKey, JSON.stringify(tabs))
+}
+
+export const loadTabData = async (
+	fileMap: ReactiveMap<string, string>,
+	fileSystem: OPFS,
+	tabKey: string
+) => {
+	if (!(await fileSystem.exists(tabKey))) {
+		await fileSystem.write(tabKey, JSON.stringify([]))
+		return
+	}
+	const file = await fileSystem.read(tabKey)
+	const tabs = JSON.parse(await file.text())
+
+	const readPromises = tabs.map(async (tab: string) => {
+		const file = await fileSystem.read(tab)
+		const ext = tab.split('.').pop()
+		fileMap.set(
+			tab,
+			await Formmater.prettier(
+				(await file?.text()) ?? '',
+				getConfigFromExt(ext)
+			)
+		)
+	})
+
+	await Promise.all(readPromises)
+}
+
+export const clearTabs = async (
+	fileMap: ReactiveMap<string, string>,
+	fs: OPFS,
+	tabKey: string
+) => {
+	await fs.write(tabKey, JSON.stringify([]))
+	fileMap.clear()
 }

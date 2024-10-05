@@ -75,7 +75,7 @@ export const Terminal: Component<XtermProps> = props => {
 		}
 	}
 	async function ls(path: string = currentPath()): Promise<string> {
-		const directoryContents = await fs.readDirectory(resolvePath(path))
+		const directoryContents = await fs()?.list(resolvePath(path))
 
 		const filesAndDirectories = [
 			...directoryContents.directories.map(dir => `${dir.name}/`),
@@ -137,7 +137,7 @@ export const Terminal: Component<XtermProps> = props => {
 	async function cp(source: string, destination: string): Promise<void> {
 		const sourcePath = resolvePath(source)
 		const destinationPath = resolvePath(destination)
-		await fs.copyFile(sourcePath, destinationPath)
+		await fs()?.copyFile(sourcePath, destinationPath)
 	}
 
 	function resolvePath(path: string): string {
@@ -175,16 +175,16 @@ export const Terminal: Component<XtermProps> = props => {
 				depth: 1
 			})
 		} catch (e) {
-			console.log(e)
+			console.error(e)
 		}
 	}
 	async function log(gitFs: Resource<typeof bFs.promises>) {
 		if (gitFs.loading) return
 		try {
 			const commits = await git.log({ fs: gitFs()!, dir: '/' })
-			console.log(commits)
+			console.info(commits)
 		} catch (e) {
-			console.log(e)
+			console.error(e)
 		}
 	}
 	async function init(gitFs: Resource<typeof bFs.promises>) {

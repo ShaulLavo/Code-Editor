@@ -11,7 +11,7 @@ export const defaultSettingsGithubLight: CreateThemeOptions['settings'] = {
 	selectionMatch: '#BBDFFF',
 	gutterBackground: '#fff',
 	gutterForeground: '#6e7781'
-}
+} as const
 
 export const githubLightStyle: CreateThemeOptions['styles'] = [
 	{ tag: [t.standard(t.tagName), t.tagName], color: '#116329' },
@@ -58,7 +58,7 @@ export const defaultSettingsGithubDark: CreateThemeOptions['settings'] = {
 	selection: '#003d73',
 	selectionMatch: '#003d73',
 	lineHighlight: '#36334280'
-}
+} as const
 
 export const githubDarkStyle: CreateThemeOptions['styles'] = [
 	{ tag: [t.standard(t.tagName), t.tagName], color: '#7ee787' },
@@ -121,7 +121,7 @@ export const xTermGithubLightTheme = {
 	brightCyan: '#032f62',
 	brightWhite: '#24292e',
 	extendedAnsi: ['#ffeef0']
-}
+} as const
 
 export const xTermGithubDarkTheme = {
 	foreground: '#c9d1d9',
@@ -148,7 +148,7 @@ export const xTermGithubDarkTheme = {
 	brightCyan: '#a5d6ff',
 	brightWhite: '#d2a8ff',
 	extendedAnsi: ['#ffeef0']
-}
+} as const
 export const githubLightBracketColors = {
 	red: xTermGithubLightTheme.red,
 	orange: xTermGithubLightTheme.yellow,

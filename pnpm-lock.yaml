@@ -77,12 +77,18 @@ importers:
       '@solid-primitives/resize-observer':
         specifier: ^2.0.26
         version: 2.0.26(solid-js@1.8.22)
+      '@solid-primitives/resource':
+        specifier: ^0.3.1
+        version: 0.3.1(solid-js@1.8.22)
       '@solid-primitives/storage':
         specifier: ^3.8.0
         version: 3.8.0(solid-js@1.8.22)
       '@thisbeyond/solid-dnd':
         specifier: ^0.7.5
         version: 0.7.5(solid-js@1.8.22)
+      '@types/wicg-file-system-access':
+        specifier: ^2023.10.5
+        version: 2023.10.5
       '@typescript/vfs':
         specifier: ^1.6.0
         version: 1.6.0(typescript@5.5.4)
@@ -741,6 +747,11 @@ packages:
     peerDependencies:
       solid-js: ^1.6.12
 
+  '@solid-primitives/resource@0.3.1':
+    resolution: {integrity: sha512-17YquMeg58aGOxUP85x4sN7PL1qBgm6euFY7a2pQQLiu5dzrCzKPHsZ8hmgSEztejVlk8VCgOIteGdTCkDgJmw==}
+    peerDependencies:
+      solid-js: ^1.6.0
+
   '@solid-primitives/rootless@1.4.5':
     resolution: {integrity: sha512-GFJE9GC3ojx0aUKqAUZmQPyU8fOVMtnVNrkdk2yS4kd17WqVSpXpoTmo9CnOwA+PG7FTzdIkogvfLQSLs4lrww==}
     peerDependencies:
@@ -832,6 +843,9 @@ packages:
 
   '@types/readable-stream@4.0.15':
     resolution: {integrity: sha512-oAZ3kw+kJFkEqyh7xORZOku1YAKvsFTogRY8kVl4vHpEKiDkfnSA/My8haRE7fvmix5Zyy+1pwzOi7yycGLBJw==}
+
+  '@types/wicg-file-system-access@2023.10.5':
+    resolution: {integrity: sha512-e9kZO9kCdLqT2h9Tw38oGv9UNzBBWaR1MzuAavxPcsV/7FJ3tWbU6RI3uB+yKIDPGLkGVbplS52ub0AcRLvrhA==}
 
   '@typescript/vfs@1.6.0':
     resolution: {integrity: sha512-hvJUjNVeBMp77qPINuUvYXj4FyWeeMMKZkxEATEU3hqBAQ7qdTBCUFT7Sp0Zu0faeEtFf+ldXxMEDr/bk73ISg==}
@@ -2573,6 +2587,10 @@ snapshots:
       '@solid-primitives/utils': 6.2.3(solid-js@1.8.22)
       solid-js: 1.8.22
 
+  '@solid-primitives/resource@0.3.1(solid-js@1.8.22)':
+    dependencies:
+      solid-js: 1.8.22
+
   '@solid-primitives/rootless@1.4.5(solid-js@1.8.22)':
     dependencies:
       '@solid-primitives/utils': 6.2.3(solid-js@1.8.22)
@@ -2663,6 +2681,8 @@ snapshots:
     dependencies:
       '@types/node': 20.16.3
       safe-buffer: 5.1.2
+
+  '@types/wicg-file-system-access@2023.10.5': {}
 
   '@typescript/vfs@1.6.0(typescript@5.5.4)':
     dependencies:

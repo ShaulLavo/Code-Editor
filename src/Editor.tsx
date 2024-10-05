@@ -55,7 +55,12 @@ import {
 	setIsTsLoading,
 	showLineNumber
 } from './stores/editorStore'
-import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
+import {
+	ThemeKey,
+	currentBackground,
+	currentTheme,
+	setTheme
+} from './stores/themeStore'
 
 import { NullableSize } from '@solid-primitives/resize-observer'
 import { Remote } from 'comlink'
@@ -155,7 +160,7 @@ export const Editor = ({
 		})
 		view.setState(editorState)
 		setView(view)
-		console.log(
+		console.info(
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
 
@@ -207,7 +212,8 @@ export const Editor = ({
 				fontSize: fontSize() + 'pt'
 			},
 			'.cm-gutters': {
-				fontSize: fontSize() + 'pt'
+				fontSize: fontSize() + 'pt',
+				backgroundColor: currentBackground()
 			}
 		})
 	)
@@ -222,14 +228,7 @@ export const Editor = ({
 	onMount(() => {
 		setupEditor()
 	})
-	createEffect(() => {
-		if (isWorkerReady()) {
-			console.log('worker ready', worker)
-		}
-	})
-	createEffect(() => {
-		console.log(filePath())
-	})
+
 	const buttons = () => parsePathToButtons(filePath())
 
 	return (
@@ -240,6 +239,7 @@ export const Editor = ({
 						<span>
 							{' '}
 							<button
+								class="text-xs"
 								onClick={() => {
 									/* noop */
 								}}

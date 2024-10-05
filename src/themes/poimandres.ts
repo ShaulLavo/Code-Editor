@@ -27,7 +27,7 @@ export const baseColors = {
 	white: '#ffffff',
 	black: '#000000',
 	transparent: '#00000000'
-}
+} as const
 export const poimandresBracketColors = {
 	red: baseColors.hotRed,
 	orange: baseColors.brightYellow,

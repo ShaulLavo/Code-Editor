@@ -5,18 +5,14 @@ import {
 	batch,
 	createEffect,
 	createSignal,
-	onMount,
-	useContext,
 	type Component
 } from 'solid-js'
 import { currentColor, isDark } from '~/stores/themeStore'
-import { AutoAnimeListContainer } from './AutoAnimatedList'
-import { gsap } from 'gsap'
 
-import { Draggable } from 'gsap/Draggable'
 import { useEditorFS } from '~/context/FsContext'
+import { saveTabs } from '~/fileSystem/fileSystem.service'
+import { EDITOR_TAB_KEY } from '~/constants/constants'
 
-gsap.registerPlugin(Draggable)
 interface EditorTabsProps {
 	filePath: Accessor<string | undefined>
 }
@@ -44,24 +40,9 @@ const Tab = ({
 }) => {
 	const [isHovered, setIsHovered] = createSignal(false)
 	const isSelected = () => filePath() === file
-	const { openPaths, setCurrentPath, fileMap, saveTabs, currentPath } =
+	const { openPaths, setCurrentPath, fileMap, setPathsToOpen, fs } =
 		useEditorFS()
 	let tabRef: HTMLDivElement = null!
-
-	onMount(() => {
-		Draggable.create(tabRef, {
-			// type: 'y',
-			bounds: document.getElementById('root'),
-
-			// inertia: true,
-			onClick: function () {
-				console.log('clicked')
-			},
-			onDragEnd: function () {
-				console.log('drag ended')
-			}
-		})
-	})
 
 	createEffect(() => {
 		if (isSelected()) {
@@ -72,6 +53,26 @@ const Tab = ({
 			})
 		}
 	})
+
+	const onFileClose = (e: Event) => {
+		e.stopPropagation()
+		batch(async () => {
+			if (isSelected()) {
+				const currentIndex = index()
+				if (openPaths().length === 1) {
+					setCurrentPath('')
+				} else if (currentIndex > 0) {
+					setCurrentPath(openPaths()[currentIndex - 1])
+				} else {
+					setCurrentPath(openPaths()[1])
+				}
+			}
+			fileMap.delete(file)
+			setPathsToOpen(current => current.filter(path => path !== file))
+			await saveTabs(fileMap.keys(), fs()!, EDITOR_TAB_KEY)
+		})
+	}
+
 	//  EditorState.toJSON/fromJSON save with tab data
 	return (
 		<div
@@ -95,23 +96,7 @@ const Tab = ({
 			{file.split('/').pop()}
 
 			<button
-				onClick={e => {
-					e.stopPropagation()
-					batch(async () => {
-						if (isSelected()) {
-							const currentIndex = index()
-							if (openPaths().length === 1) {
-								setCurrentPath('')
-							} else if (currentIndex > 0) {
-								setCurrentPath(openPaths()[currentIndex - 1])
-							} else {
-								setCurrentPath(openPaths()[1])
-							}
-						}
-						fileMap.delete(file)
-						await saveTabs(fileMap.keys())
-					})
-				}}
+				onClick={onFileClose}
 				style={{ visibility: isHovered() ? 'visible' : 'hidden' }}
 			>
 				<VsClose color={currentColor()} />

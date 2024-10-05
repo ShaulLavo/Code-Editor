@@ -18,7 +18,7 @@ export const lightColors = {
 	offWhite: '#f5f5f5',
 	focus: '#343131',
 	bluishGrayBrighter: '#90a4ae'
-}
+} as const
 
 export const light = createTheme({
 	variant: 'light',
@@ -127,13 +127,20 @@ export const xTermlightTheme = {
 
 	extendedAnsi: [lightColors.bluishGrayBrighter]
 }
-
+export const lightBracketColors = {
+	red: lightColors.hotRed,
+	orange: lightColors.brightYellow,
+	yellow: lightColors.brightMint,
+	green: lightColors.lightBlue,
+	blue: lightColors.lightBlue,
+	indigo: lightColors.gray,
+	violet: lightColors.darkerGray
+}
 export const darkColors = {
 	focus: '#303340',
 	background: '#302D2D',
 	text: '#F6F2F2',
 	selection: '#343131',
-
 	brightYellow: '#9ECECA',
 	brightMint: '#FFE4E4',
 	lowerMint: '#FFE4E4',
@@ -145,7 +152,7 @@ export const darkColors = {
 	pink: '#f087bd',
 	gray: '#a6accd',
 	darkerGray: '#767c9d'
-}
+} as const
 export const darkBracketColors = {
 	red: darkColors.hotRed,
 	orange: darkColors.brightYellow,

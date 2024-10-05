@@ -184,7 +184,6 @@ const CommandItem: Component<
 			observer.disconnect()
 		})
 	})
-	console.log('CommandItem', others.value)
 	return (
 		<CommandPrimitive.CommandItem
 			ref={commandItemRef}

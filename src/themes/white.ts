@@ -25,7 +25,7 @@ const cl = {
 	invalid: null,
 	regexp: '#6b7a88',
 	tag: null
-}
+} as const
 export const cd = {
 	background: '#000',
 	foreground: '#fff',
@@ -51,7 +51,7 @@ export const cd = {
 	invalid: null,
 	regexp: '#a8a8b1',
 	tag: null
-}
+} as const
 export const defaultSettingsWhiteLight: CreateThemeOptions['settings'] = {
 	background: cl.background,
 	foreground: cl.foreground,
@@ -200,7 +200,7 @@ export const xTermWhiteLightTheme = {
 	brightWhite: cl.foreground,
 
 	extendedAnsi: [cl.activeLine]
-}
+} as const
 
 export const xTermWhiteDarkTheme = {
 	foreground: cd.foreground,
@@ -230,7 +230,7 @@ export const xTermWhiteDarkTheme = {
 	brightWhite: cd.foreground,
 
 	extendedAnsi: [cd.activeLine]
-}
+} as const
 export const whiteLightBracketColors = {
 	red: xTermWhiteLightTheme.red,
 	orange: xTermWhiteLightTheme.yellow,
@@ -239,7 +239,7 @@ export const whiteLightBracketColors = {
 	blue: xTermWhiteLightTheme.blue,
 	indigo: xTermWhiteLightTheme.brightBlue,
 	violet: xTermWhiteLightTheme.magenta
-}
+} as const
 
 export const whiteDarkBracketColors = {
 	red: xTermWhiteDarkTheme.red,
@@ -249,4 +249,4 @@ export const whiteDarkBracketColors = {
 	blue: xTermWhiteDarkTheme.blue,
 	indigo: xTermWhiteDarkTheme.brightBlue,
 	violet: xTermWhiteDarkTheme.magenta
-}
+} as const

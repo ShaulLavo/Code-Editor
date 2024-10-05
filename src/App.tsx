@@ -56,22 +56,11 @@ import './xterm.css'
 export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
 	null!
 const Main: Component = () => {
-	const {
-		currentExtension,
-		code,
-		setCode,
-		refetch,
-		traversedNodes,
-		filePath,
-		prettierConfig,
-		isTs,
-		openPaths
-	} = useEditorFS()
+	const { code, setCode, refetchNodes, filePath, isTs } = useEditorFS()
 
 	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
 	initTsWorker(async tsWorker => {
 		worker = tsWorker
-		console.log('worker ready')
 		setIsWorkerReady(true)
 	})
 
@@ -106,7 +95,7 @@ const Main: Component = () => {
 	})
 	return (
 		<>
-			<CmdK code={code} setCode={setCode} refetch={refetch} />
+			<CmdK code={code} setCode={setCode} refetch={refetchNodes} />
 
 			<main
 				ref={container}
@@ -136,9 +125,12 @@ const Main: Component = () => {
 						class="overflow-x-hidden"
 						initialSize={horizontalPanelSize()?.[0]}
 					>
-						<FileSystem traversedNodes={traversedNodes} />
+						<FileSystem />
 					</ResizablePanel>
-					<ResizableHandle class={isDark() ? 'bg-gray-800' : 'bg-gray-200'} />
+					<ResizableHandle
+						withHandle
+						class={isDark() ? 'bg-gray-800' : 'bg-gray-200'}
+					/>
 					<ResizablePanel
 						class="overflow-hidden"
 						initialSize={horizontalPanelSize()?.[1]}
@@ -173,6 +165,7 @@ const Main: Component = () => {
 								</Show>
 							</ResizablePanel>
 							<ResizableHandle
+								withHandle
 								class={isDark() ? 'bg-gray-800' : 'bg-gray-200'}
 							/>
 							<ResizablePanel
@@ -216,6 +209,7 @@ const App: Component = () => {
 		const fontSize = `${baseFontSize()}px`
 		document.documentElement.style.fontSize = fontSize
 	})
+
 	return (
 		<EditorFSProvider>
 			<TerminalFSProvider>
