@@ -49,3 +49,9 @@ export function hexToRgb(hex: string) {
 			}
 		: null
 }
+
+export const getLighterRgbColor = (hex: string, alpha: number): string => {
+	const rgb = hexToRgb(hex)
+	if (!rgb) return ''
+	return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
+}

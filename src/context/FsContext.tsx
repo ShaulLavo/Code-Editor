@@ -28,7 +28,7 @@ import {
 	Node,
 	saveTabs,
 	traverseAndSetOpen
-} from '~/fileSystem/fileSystem.service'
+} from '~/modules/fileSystem/fileSystem.service'
 import { extensionMap, Formmater, getConfigFromExt } from '~/format'
 import { OPFS } from '~/FS/OPFS'
 import { createDeepSignal } from '~/lib/utils'

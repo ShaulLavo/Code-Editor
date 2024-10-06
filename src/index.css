@@ -46,13 +46,6 @@
 		--ring: 240 5.9% 10%;
 
 		--radius: 0.5rem;
-		--rainbow-bracket-red: red;
-		--rainbow-bracket-orange: orange;
-		--rainbow-bracket-yellow: yellow;
-		--rainbow-bracket-green: green;
-		--rainbow-bracket-blue: blue;
-		--rainbow-bracket-indigo: indigo;
-		--rainbow-bracket-violet: violet;
 	}
 
 	.dark,
@@ -114,10 +107,37 @@
 	}
 }
 
+@layer utilities {
+	.step {
+		counter-increment: step;
+	}
+
+	.step:before {
+		@apply absolute w-9 h-9 bg-muted rounded-full font-mono font-medium text-center text-base inline-flex items-center justify-center -indent-px border-4 border-background;
+		@apply ml-[-50px] mt-[-4px];
+		content: counter(step);
+	}
+}
+
 @media (max-width: 640px) {
 	.container {
 		@apply px-4;
 	}
+}
+
+::-webkit-scrollbar {
+	width: 16px;
+}
+
+::-webkit-scrollbar-thumb {
+	border-radius: 9999px;
+	border: 4px solid transparent;
+	background-clip: content-box;
+	@apply bg-accent;
+}
+
+::-webkit-scrollbar-corner {
+	display: none;
 }
 
 @font-face {

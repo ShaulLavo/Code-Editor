@@ -65,6 +65,7 @@ import {
 	poimandresBracketColors,
 	xTermPoimandresTheme
 } from '../themes/poimandres'
+import { mojo, mojoBracketColors, xTermMojoTheme } from '~/themes/mojo'
 
 type ThemeSettingType = {
 	theme: Extension
@@ -202,7 +203,7 @@ const themeSettings = {
 		color: baseColors.white,
 		mode: 'dark',
 		xTermTheme: xTermPoimandresTheme,
-		color1: '\x1b[38;2;208;103;157m', // Hot Red - Strings and meta
+		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;255m',
 		rainbowBracket: poimandresBracketColors
 	},
@@ -244,6 +245,16 @@ const themeSettings = {
 			indigo: '#00BFFF',
 			violet: '#FF00FF'
 		}
+	},
+	mojo: {
+		theme: mojo,
+		background: '#1E1E1E',
+		color: '#A6A6A6',
+		mode: 'dark',
+		xTermTheme: xTermMojoTheme,
+		color1: '\x1b[38;2;200;100;100m',
+		color2: '\x1b[38;2;65;166;217m',
+		rainbowBracket: mojoBracketColors
 	}
 } as const satisfies Record<string, ThemeSettingType>
 

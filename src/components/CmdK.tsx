@@ -36,7 +36,7 @@ import { useEditorFS } from '~/context/FsContext'
 import {
 	clearTabs,
 	createFileSystemStructure
-} from '~/fileSystem/fileSystem.service'
+} from '~/modules/fileSystem/fileSystem.service'
 import { Formmater, getConfigFromExt } from '~/format'
 import { setShowLineNumber, showLineNumber } from '~/stores/editorStore'
 import {

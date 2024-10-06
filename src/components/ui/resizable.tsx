@@ -1,8 +1,8 @@
 import type { ValidComponent } from 'solid-js'
-import { Show, splitProps } from 'solid-js'
+import { createEffect, Show, splitProps } from 'solid-js'
 
 import type { DynamicProps, HandleProps, RootProps } from '@corvu/resizable'
-import ResizablePrimitive from '@corvu/resizable'
+import ResizablePrimitive, { usePanelContext } from '@corvu/resizable'
 
 import { cn } from '~/lib/utils'
 
@@ -14,6 +14,12 @@ const Resizable = <T extends ValidComponent = 'div'>(
 	props: DynamicProps<T, ResizableProps<T>>
 ) => {
 	const [, rest] = splitProps(props as ResizableProps, ['class'])
+	// const context = ResizablePrimitive.useContext()
+	// context.setSizes
+	createEffect(() => {
+		if (props.size) {
+		}
+	})
 	return (
 		<ResizablePrimitive
 			class={cn(

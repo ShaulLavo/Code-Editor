@@ -1,7 +1,7 @@
 import { ClipboardAddon } from '@xterm/addon-clipboard'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
-import { Terminal as Xterm } from '@xterm/xterm'
+import { ITheme, Terminal as Xterm } from '@xterm/xterm'
 import { Buffer } from 'buffer'
 import git from 'isomorphic-git'
 import http from 'isomorphic-git/http/web'
@@ -17,11 +17,9 @@ import {
 import { Readline } from 'xterm-readline'
 import { xTermTheme } from './stores/themeStore'
 import './xterm.css'
-window.Buffer = Buffer
-
+  
 import { NullableSize } from '@solid-primitives/resize-observer'
-import { fs as bFs, configure } from '@zenfs/core'
-import { IndexedDB } from '@zenfs/dom'
+
 import { useTerminalFS } from './context/FsContext'
 import { createInnerZoom } from './hooks/createInnerZoom'
 
@@ -32,14 +30,7 @@ interface XtermProps {
 export const Terminal: Component<XtermProps> = props => {
 	const { setCurrentPath, currentPath, fs } = useTerminalFS()
 
-	const createBrowserFS = async () => {
-		await configure({
-			mounts: {
-				'/git': IndexedDB
-			}
-		})
-		return bFs.promises
-	}
+
 
 	async function cd(filesystem: any, path: string): Promise<void> {
 		let newPath: string
@@ -161,7 +152,7 @@ export const Terminal: Component<XtermProps> = props => {
 		}
 		rl.write('\r\n')
 	}
-	async function clone(gitFs: Resource<typeof bFs.promises>) {
+	async function clone(gitFs: Resource<any>) {
 		if (gitFs.loading) return
 		try {
 			await git.clone({
@@ -178,7 +169,7 @@ export const Terminal: Component<XtermProps> = props => {
 			console.error(e)
 		}
 	}
-	async function log(gitFs: Resource<typeof bFs.promises>) {
+	async function log(gitFs: Resource<any>) {
 		if (gitFs.loading) return
 		try {
 			const commits = await git.log({ fs: gitFs()!, dir: '/' })
@@ -187,11 +178,11 @@ export const Terminal: Component<XtermProps> = props => {
 			console.error(e)
 		}
 	}
-	async function init(gitFs: Resource<typeof bFs.promises>) {
+	async function init(gitFs: Resource<any>) {
 		await git.init({ fs: gitFs()!, dir: '/' })
 	}
 
-	const [gitFs] = createResource(createBrowserFS)
+
 
 	const [ref, setRef] = createSignal<HTMLDivElement>(null!)
 	const term = new Xterm({
@@ -255,7 +246,7 @@ export const Terminal: Component<XtermProps> = props => {
 		})
 	})
 	createEffect(() => {
-		term.options.theme = xTermTheme()
+		term.options.theme = xTermTheme() as ITheme 
 	})
 	createEffect(() => {
 		fontSize()
