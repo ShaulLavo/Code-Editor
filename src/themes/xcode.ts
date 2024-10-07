@@ -102,7 +102,7 @@ export const xTermXcodeLightTheme = {
 	brightWhite: '#fff',
 
 	extendedAnsi: ['#d5e6ff69']
-}
+} as const
 
 export const xTermXcodeDarkTheme = {
 	foreground: '#CECFD0',
@@ -132,7 +132,7 @@ export const xTermXcodeDarkTheme = {
 	brightWhite: '#CECFD0',
 
 	extendedAnsi: ['#ffffff0f']
-}
+} as const
 export const xCodeLightBracketColors = {
 	red: xTermXcodeLightTheme.red,
 	orange: xTermXcodeLightTheme.yellow,
@@ -141,7 +141,7 @@ export const xCodeLightBracketColors = {
 	blue: xTermXcodeLightTheme.blue,
 	indigo: xTermXcodeLightTheme.brightBlue,
 	violet: xTermXcodeLightTheme.magenta
-}
+} as const
 
 export const xCodeDarkBracketColors = {
 	red: xTermXcodeDarkTheme.red,
@@ -151,4 +151,4 @@ export const xCodeDarkBracketColors = {
 	blue: xTermXcodeDarkTheme.blue,
 	indigo: xTermXcodeDarkTheme.brightBlue,
 	violet: xTermXcodeDarkTheme.magenta
-}
+} as const

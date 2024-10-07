@@ -1,19 +1,30 @@
-import type { Node } from '../../fileSystem/fileSystem.service'
+import { Document, FSNode } from '~/FS/OPFS'
 import { all } from '../samples'
 
-export const demoNodes: Node[] = [
+interface Folder {
+	name: string
+	children: Array<Folder | Doc>
+}
+type Doc = {
+	content: string
+	name: string
+}
+
+export type DemoNode = Folder | Doc
+
+export const demoNodes: DemoNode[] = [
 	{
 		name: 'Home',
-		nodes: [
+		children: [
 			{
 				name: 'Movies',
-				nodes: [
+				children: [
 					{
 						name: 'Action',
-						nodes: [
+						children: [
 							{
 								name: '2000s',
-								nodes: [
+								children: [
 									{ name: 'Gladiator.mp4', content: 'Gladiator' },
 									{ name: 'The-Dark-Knight.mp4', content: 'The Dark Knight' },
 									{ name: 'Die-Hard-4.mp4', content: 'Die Hard 4' }
@@ -21,7 +32,7 @@ export const demoNodes: Node[] = [
 							},
 							{
 								name: '2010s',
-								nodes: [
+								children: [
 									{
 										name: 'Mad-Max-Fury-Road.mp4',
 										content: 'Mad Max: Fury Road'
@@ -31,7 +42,7 @@ export const demoNodes: Node[] = [
 							},
 							{
 								name: '1990s',
-								nodes: [
+								children: [
 									{
 										name: 'Terminator-2.mp4',
 										content: 'Terminator 2: Judgment Day'
@@ -43,10 +54,10 @@ export const demoNodes: Node[] = [
 					},
 					{
 						name: 'Comedy',
-						nodes: [
+						children: [
 							{
 								name: '2000s',
-								nodes: [
+								children: [
 									{ name: 'Superbad.mp4', content: 'Superbad' },
 									{
 										name: 'Anchorman.mp4',
@@ -56,7 +67,7 @@ export const demoNodes: Node[] = [
 							},
 							{
 								name: '1990s',
-								nodes: [
+								children: [
 									{ name: 'Dumb-and-Dumber.mp4', content: 'Dumb and Dumber' },
 									{ name: 'The-Big-Lebowski.mp4', content: 'The Big Lebowski' }
 								]
@@ -65,10 +76,10 @@ export const demoNodes: Node[] = [
 					},
 					{
 						name: 'Drama',
-						nodes: [
+						children: [
 							{
 								name: '2000s',
-								nodes: [
+								children: [
 									{ name: 'American-Beauty.mp4', content: 'American Beauty' },
 									{
 										name: 'Requiem-for-a-Dream.mp4',
@@ -78,7 +89,7 @@ export const demoNodes: Node[] = [
 							},
 							{
 								name: '1990s',
-								nodes: [
+								children: [
 									{
 										name: 'Shawshank-Redemption.mp4',
 										content: 'The Shawshank Redemption'
@@ -92,10 +103,10 @@ export const demoNodes: Node[] = [
 			},
 			{
 				name: 'Music',
-				nodes: [
+				children: [
 					{
 						name: 'Rock',
-						nodes: [
+						children: [
 							{ name: 'Led-Zeppelin-IV.mp3', content: 'Led Zeppelin - IV' },
 							{
 								name: 'Dark-Side-of-the-Moon.mp3',
@@ -105,7 +116,7 @@ export const demoNodes: Node[] = [
 					},
 					{
 						name: 'Classical',
-						nodes: [
+						children: [
 							{
 								name: 'Beethoven-Symphony-9.mp3',
 								content: 'Beethoven - Symphony No. 9'
@@ -115,7 +126,7 @@ export const demoNodes: Node[] = [
 					},
 					{
 						name: 'Jazz',
-						nodes: [
+						children: [
 							{
 								name: 'Miles-Davis-Kind-of-Blue.mp3',
 								content: 'Miles Davis - Kind of Blue'
@@ -130,17 +141,17 @@ export const demoNodes: Node[] = [
 			},
 			{
 				name: 'Pictures',
-				nodes: [
+				children: [
 					{
 						name: 'Vacation',
-						nodes: [
+						children: [
 							{ name: 'Beach.jpg', content: 'Beach Photo' },
 							{ name: 'Mountains.jpg', content: 'Mountain Photo' }
 						]
 					},
 					{
 						name: 'Family',
-						nodes: [
+						children: [
 							{ name: 'Birthday.jpg', content: 'Birthday Celebration' },
 							{ name: 'Christmas.jpg', content: 'Christmas Gathering' }
 						]
@@ -149,7 +160,7 @@ export const demoNodes: Node[] = [
 			},
 			{
 				name: 'Documents',
-				nodes: [
+				children: [
 					{ name: 'Resume.docx', content: 'My Resume' },
 					{ name: 'Project-Proposal.pdf', content: 'Project Proposal' },
 					{ name: 'Report.xlsx', content: 'Annual Report' }
@@ -157,17 +168,17 @@ export const demoNodes: Node[] = [
 			},
 			{
 				name: 'Work',
-				nodes: [
+				children: [
 					{
 						name: 'Projects',
-						nodes: [
+						children: [
 							{ name: 'Website-Redesign', content: 'Website Redesign Project' },
 							{ name: 'App-Development', content: 'App Development Project' }
 						]
 					},
 					{
 						name: 'Meetings',
-						nodes: [
+						children: [
 							{
 								name: '2024-08-01-Meeting-Notes.docx',
 								content: 'Notes from August 1st Meeting'
@@ -185,13 +196,13 @@ export const demoNodes: Node[] = [
 	}
 ] as const
 
-export const nextApp: Node[] = [
+export const nextApp: DemoNode[] = [
 	{
 		name: 'MyNextApp',
-		nodes: [
+		children: [
 			{
 				name: 'pages',
-				nodes: [
+				children: [
 					{ name: 'main.tsx', content: all },
 
 					{
@@ -211,7 +222,7 @@ export const nextApp: Node[] = [
 					},
 					{
 						name: 'about',
-						nodes: [
+						children: [
 							{
 								name: 'index.tsx',
 								content:
@@ -221,7 +232,7 @@ export const nextApp: Node[] = [
 					},
 					{
 						name: 'blog',
-						nodes: [
+						children: [
 							{
 								name: '[id].tsx',
 								content:
@@ -236,7 +247,7 @@ export const nextApp: Node[] = [
 					},
 					{
 						name: 'products',
-						nodes: [
+						children: [
 							{
 								name: '[id].tsx',
 								content:
@@ -249,7 +260,7 @@ export const nextApp: Node[] = [
 							},
 							{
 								name: 'categories',
-								nodes: [
+								children: [
 									{
 										name: '[category].tsx',
 										content:
@@ -263,7 +274,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'components',
-				nodes: [
+				children: [
 					{
 						name: 'Header.tsx',
 						content:
@@ -298,7 +309,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'styles',
-				nodes: [
+				children: [
 					{
 						name: 'globals.css',
 						content: 'body { margin: 0; font-family: Arial, sans-serif; }'
@@ -313,14 +324,14 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'public',
-				nodes: [
+				children: [
 					{ name: 'favicon.ico', content: 'Binary content of favicon.ico' },
 					{ name: 'logo.png', content: 'Binary content of logo.png' }
 				]
 			},
 			{
 				name: 'utils',
-				nodes: [
+				children: [
 					{
 						name: 'api.ts',
 						content:
@@ -340,7 +351,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'api',
-				nodes: [
+				children: [
 					{
 						name: 'products.ts',
 						content:
@@ -355,7 +366,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'config',
-				nodes: [
+				children: [
 					{
 						name: 'next.config.js',
 						content: 'module.exports = { reactStrictMode: true };'
@@ -369,7 +380,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'hooks',
-				nodes: [
+				children: [
 					{
 						name: 'useProduct.ts',
 						content:
@@ -384,7 +395,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'contexts',
-				nodes: [
+				children: [
 					{
 						name: 'AuthContext.tsx',
 						content:
@@ -394,7 +405,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'lib',
-				nodes: [
+				children: [
 					{
 						name: 'db.ts',
 						content:
@@ -409,7 +420,7 @@ export const nextApp: Node[] = [
 			},
 			{
 				name: 'pages/api',
-				nodes: [
+				children: [
 					{
 						name: 'login.ts',
 						content:

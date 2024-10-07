@@ -6,26 +6,35 @@ import {
 	createEffect,
 	createSignal,
 	onMount,
-	useContext,
 	type Component
 } from 'solid-js'
 import { currentColor, isDark } from '~/stores/themeStore'
-import { AutoAnimeListContainer } from './AutoAnimatedList'
-import { gsap } from 'gsap'
 
-import { Draggable } from 'gsap/Draggable'
 import { useEditorFS } from '~/context/FsContext'
+import { saveTabs } from '~/modules/fileSystem/fileSystem.service'
+import { EDITOR_TAB_KEY } from '~/constants/constants'
+import { createEventListener } from '@solid-primitives/event-listener'
 
-gsap.registerPlugin(Draggable)
 interface EditorTabsProps {
 	filePath: Accessor<string | undefined>
 }
 
 export const EditorTabs: Component<EditorTabsProps> = ({ filePath }) => {
 	const { openPaths } = useEditorFS()
+	let tabContainer: HTMLDivElement = null!
+	onMount(() => {
+		createEventListener(tabContainer, 'wheel', (e: WheelEvent) => {
+			e.preventDefault()
+
+			tabContainer.scrollLeft += e.deltaY
+		})
+	})
 
 	return (
-		<div class="flex overflow-x-auto whitespace-nowrap z-50 relative">
+		<div
+			ref={tabContainer}
+			class="flex overflow-x-auto whitespace-nowrap z-50 relative"
+		>
 			<For each={openPaths()}>
 				{(path, index) => <Tab file={path} filePath={filePath} index={index} />}
 			</For>
@@ -44,24 +53,9 @@ const Tab = ({
 }) => {
 	const [isHovered, setIsHovered] = createSignal(false)
 	const isSelected = () => filePath() === file
-	const { openPaths, setCurrentPath, fileMap, saveTabs, currentPath } =
+	const { openPaths, setCurrentPath, fileMap, setPathsToOpen, fs } =
 		useEditorFS()
 	let tabRef: HTMLDivElement = null!
-
-	onMount(() => {
-		Draggable.create(tabRef, {
-			// type: 'y',
-			bounds: document.getElementById('root'),
-
-			// inertia: true,
-			onClick: function () {
-				console.log('clicked')
-			},
-			onDragEnd: function () {
-				console.log('drag ended')
-			}
-		})
-	})
 
 	createEffect(() => {
 		if (isSelected()) {
@@ -72,6 +66,26 @@ const Tab = ({
 			})
 		}
 	})
+
+	const onFileClose = (e: Event) => {
+		e.stopPropagation()
+		batch(async () => {
+			if (isSelected()) {
+				const currentIndex = index()
+				if (openPaths().length === 1) {
+					setCurrentPath('')
+				} else if (currentIndex > 0) {
+					setCurrentPath(openPaths()[currentIndex - 1])
+				} else {
+					setCurrentPath(openPaths()[1])
+				}
+			}
+			fileMap.delete(file)
+			setPathsToOpen(current => current.filter(path => path !== file))
+			await saveTabs(fileMap.keys(), fs()!, EDITOR_TAB_KEY)
+		})
+	}
+
 	//  EditorState.toJSON/fromJSON save with tab data
 	return (
 		<div
@@ -84,37 +98,28 @@ const Tab = ({
 					setCurrentPath(file)
 				})
 			}}
-			class={`px-4 py-2 focus:outline-none text-sm items-center flex cursor-pointer relative z-50 ${
+			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 ${
 				isSelected()
-					? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20`
-					: ''
+					? 'border-t-2'
+					: `${isDark() ? 'bg-gray-200' : 'bg-gray-600'} bg-opacity-5`
 			}`}
+			style={{
+				'border-color': currentColor()
+			}}
 			data-value={file}
 			role="button"
 		>
 			{file.split('/').pop()}
 
 			<button
-				onClick={e => {
-					e.stopPropagation()
-					batch(async () => {
-						if (isSelected()) {
-							const currentIndex = index()
-							if (openPaths().length === 1) {
-								setCurrentPath('')
-							} else if (currentIndex > 0) {
-								setCurrentPath(openPaths()[currentIndex - 1])
-							} else {
-								setCurrentPath(openPaths()[1])
-							}
-						}
-						fileMap.delete(file)
-						await saveTabs(fileMap.keys())
-					})
+				onClick={onFileClose}
+				class="pl-2 flex items-center justify-center"
+				style={{
+					visibility: isHovered() || isSelected() ? 'visible' : 'hidden',
+					'padding-top': '1.5px'
 				}}
-				style={{ visibility: isHovered() ? 'visible' : 'hidden' }}
 			>
-				<VsClose color={currentColor()} />
+				<VsClose size={16} color={currentColor()} />
 			</button>
 		</div>
 	)

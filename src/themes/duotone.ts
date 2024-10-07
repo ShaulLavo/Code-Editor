@@ -16,7 +16,7 @@ export const defaultSettingsDuotoneLight: CreateThemeOptions['settings'] = {
 	gutterForeground: '#cdc4b1',
 	gutterBorder: 'transparent',
 	lineHighlight: '#ddceb154'
-}
+} as const
 
 export const douToneLightStyle: CreateThemeOptions['styles'] = [
 	{ tag: [t.comment, t.bracket], color: '#b6ad9a' },
@@ -57,7 +57,7 @@ export const defaultSettingsDuotoneDark: CreateThemeOptions['settings'] = {
 	gutterBackground: '#2a2734',
 	gutterForeground: '#545167',
 	lineHighlight: '#36334280'
-}
+} as const
 
 export const duotoneDarkStyle: CreateThemeOptions['styles'] = [
 	{ tag: [t.comment, t.bracket], color: '#6c6783' },
@@ -125,7 +125,7 @@ export const xTermDuotoneLightTheme = {
 	brightWhite: '#ffffff',
 
 	extendedAnsi: ['#ddceb154']
-}
+} as const
 
 export const xTermDuotoneDarkTheme = {
 	foreground: '#6c6783',
@@ -155,7 +155,7 @@ export const xTermDuotoneDarkTheme = {
 	brightWhite: '#ffffff',
 
 	extendedAnsi: ['#36334280']
-}
+} as const
 export const duotoneLightBracketColors = {
 	red: xTermDuotoneLightTheme.red,
 	orange: xTermDuotoneLightTheme.yellow,

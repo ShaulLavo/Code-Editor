@@ -4,15 +4,13 @@ import { javascript } from '@codemirror/lang-javascript'
 import {
 	bracketMatching,
 	foldGutter,
-	indentOnInput,
-	foldState
+	indentOnInput
 } from '@codemirror/language'
 import { highlightSelectionMatches } from '@codemirror/search'
 import { EditorState, Extension } from '@codemirror/state'
 import {
 	EditorView,
 	drawSelection,
-	gutter,
 	highlightActiveLine,
 	highlightActiveLineGutter,
 	highlightSpecialChars,
@@ -20,6 +18,7 @@ import {
 	lineNumbers,
 	rectangularSelection
 } from '@codemirror/view'
+import { indentationMarkers } from '@replit/codemirror-indentation-markers'
 import { showMinimap } from '@replit/codemirror-minimap'
 import {
 	tsFacetWorker,
@@ -27,7 +26,6 @@ import {
 	tsLinterWorker,
 	tsSyncWorker
 } from '@valtown/codemirror-ts'
-import { type WorkerShape } from '@valtown/codemirror-ts/worker'
 import {
 	Accessor,
 	For,
@@ -36,13 +34,11 @@ import {
 	batch,
 	createEffect,
 	createSignal,
-	onMount,
-	useContext
+	onMount
 } from 'solid-js'
-import { extensionMap, formatCode, formatter } from './format'
-import { createEditorControlledValue } from './hooks/controlledValue'
-import { createCompartmentExtension } from './hooks/createCompartmentExtension'
-import { useShortcuts } from './hooks/useShortcuts'
+import { extensionMap, formatCode } from '~/format'
+import { createEditorControlledValue } from '~/hooks/controlledValue'
+import { createCompartmentExtension } from '~/hooks/createCompartmentExtension'
 import {
 	editorHight,
 	editorRef,
@@ -54,22 +50,25 @@ import {
 	setEditorRef,
 	setIsTsLoading,
 	showLineNumber
-} from './stores/editorStore'
-import { ThemeKey, currentTheme, setTheme } from './stores/themeStore'
+} from '~/stores/editorStore'
+import {
+	ThemeKey,
+	bracketColors,
+	currentBackground,
+	currentTheme,
+	setTheme
+} from '~/stores/themeStore'
 
 import { NullableSize } from '@solid-primitives/resize-observer'
-import { Remote } from 'comlink'
-import ts from 'typescript'
-import { initTsWorker } from './utils/worker'
 
-import { Options } from 'prettier'
-import { createInnerZoom } from './hooks/createInnerZoom'
+import { createInnerZoom } from '~/hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
-import { autoHide } from './utils/dom'
-import { worker } from './App'
-import { useEditorFS } from './context/FsContext'
-import { createKeymap } from './utils/keymap'
+import { useEditorFS } from '~/context/FsContext'
+import { worker } from '~/modules/main/Main'
+import { autoHide } from '~/utils/dom'
+import { createKeymap } from '~/utils/keymap'
+import { EditorNav } from './EditorNav'
 
 export interface EditorProps {
 	code:
@@ -105,7 +104,18 @@ export const Editor = ({
 	// editorView().state.toJSON({foldState})
 	const setupEditor = () => {
 		const defaultKeymap = createKeymap(editorFS)
+		const createColorCycler = () => {
+			const colors = Object.values(bracketColors())
+			let index = 0
 
+			return () => {
+				const color = colors[index]
+				index = (index + 1) % colors.length // Cycle back to the start when reaching the end
+				return color
+			}
+		}
+
+		const getBracketColor = createColorCycler()
 		const baseExtensions = [
 			highlightSpecialChars(),
 			history(),
@@ -120,10 +130,19 @@ export const Editor = ({
 			// EditorView.lineWrapping,
 			keymap.of(defaultKeymap),
 			javascript({ jsx: true, typescript: true }),
-			// foldGutter({}),
 			bracketMatching(),
 			rainbowBrackets(),
-			highlightActiveLineGutter()
+			highlightActiveLineGutter(),
+			indentationMarkers({
+				hideFirstIndent: true,
+				markerType: 'codeOnly',
+				colors: {
+					light: getBracketColor(),
+					dark: getBracketColor(),
+					activeLight: getBracketColor(),
+					activeDark: getBracketColor()
+				}
+			})
 		] as Extension[]
 		const editorState = EditorState.create({
 			doc: code(),
@@ -140,6 +159,7 @@ export const Editor = ({
 					const { state } = view
 					const { selection, doc } = state
 					const { main } = selection
+
 					const line = doc.lineAt(main.head)
 					// lastLine.number
 					// const lineContents = view.state.sliceDoc(line.from, line.to)
@@ -155,7 +175,7 @@ export const Editor = ({
 		})
 		view.setState(editorState)
 		setView(view)
-		console.log(
+		console.info(
 			`time to first paint: ${performance.now() - start} milliseconds`
 		)
 
@@ -164,10 +184,6 @@ export const Editor = ({
 
 		return view
 	}
-	const parsePathToButtons = (path?: string) => {
-		const parts = path?.split('/').filter(part => part !== '')
-		return parts
-	}
 
 	const createExtention = (extention: Accessor<Extension>) =>
 		createCompartmentExtension(extention, editorView)
@@ -175,6 +191,7 @@ export const Editor = ({
 	createEditorControlledValue(editorView, code)
 	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
 	createExtention(currentTheme)
+	createExtention(foldGutter)
 	createExtention(() =>
 		showMinimap.compute([], () => {
 			return isMiniMap()
@@ -207,7 +224,8 @@ export const Editor = ({
 				fontSize: fontSize() + 'pt'
 			},
 			'.cm-gutters': {
-				fontSize: fontSize() + 'pt'
+				fontSize: fontSize() + 'pt',
+				backgroundColor: currentBackground()
 			}
 		})
 	)
@@ -222,34 +240,10 @@ export const Editor = ({
 	onMount(() => {
 		setupEditor()
 	})
-	createEffect(() => {
-		if (isWorkerReady()) {
-			console.log('worker ready', worker)
-		}
-	})
-	createEffect(() => {
-		console.log(filePath())
-	})
-	const buttons = () => parsePathToButtons(filePath())
 
 	return (
 		<>
-			<div class="text-xs">
-				<For each={buttons()}>
-					{(part, index) => (
-						<span>
-							{' '}
-							<button
-								onClick={() => {
-									/* noop */
-								}}
-							>
-								{part + (index() === buttons?.()!.length - 1 ? '' : ' >')}
-							</button>{' '}
-						</span>
-					)}
-				</For>
-			</div>
+			<EditorNav />
 			<div
 				id="editor"
 				class="w-full"

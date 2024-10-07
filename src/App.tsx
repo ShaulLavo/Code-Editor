@@ -11,186 +11,18 @@
 import {
 	ColorModeProvider,
 	ColorModeScript,
-	createLocalStorageManager,
-	useColorMode
+	createLocalStorageManager
 } from '@kobalte/core'
-import { createElementSize } from '@solid-primitives/resize-observer'
-import { makePersisted } from '@solid-primitives/storage'
-import { WorkerShape } from '@valtown/codemirror-ts/worker'
-import { Remote } from 'comlink'
-import {
-	Show,
-	createEffect,
-	createSignal,
-	onMount,
-	useContext,
-	type Component
-} from 'solid-js'
-import ts from 'typescript'
-import {
-	Resizable,
-	ResizableHandle,
-	ResizablePanel
-} from '~/components/ui/resizable'
-import { Editor } from './Editor'
-import { StatusBar } from './StatusBar'
-import { Terminal } from './Terminal'
-import { CmdK } from './components/CmdK'
-import { EditorTabs } from './components/EditorTabs'
-import {
-	EditorFSProvider,
-	TerminalFSProvider,
-	useEditorFS
-} from './context/FsContext'
-import { FileSystem } from './fileSystem/FileSystem'
+import { createEffect, type Component } from 'solid-js'
+import { EditorFSProvider, TerminalFSProvider } from '~/context/FsContext'
 import {
 	baseFontSize,
 	bracketColors,
 	currentBackground,
-	currentColor,
-	isDark
-} from './stores/themeStore'
-import { initTsWorker } from './utils/worker'
-import './xterm.css'
-
-export let worker: WorkerShape & Remote<ts.System> & { close: () => void } =
-	null!
-const Main: Component = () => {
-	const {
-		currentExtension,
-		code,
-		setCode,
-		refetch,
-		traversedNodes,
-		filePath,
-		prettierConfig,
-		isTs,
-		openPaths
-	} = useEditorFS()
-
-	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
-	initTsWorker(async tsWorker => {
-		worker = tsWorker
-		console.log('worker ready')
-		setIsWorkerReady(true)
-	})
-
-	const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
-		createSignal<number[]>([0.25, 0.75]),
-		{ name: 'horizontalPanelSize' }
-	)
-	const [verticalPanelSize, setVerticalPanelSize] = makePersisted(
-		createSignal<number[]>([0.7, 0.3]),
-		{ name: 'verticalPanelSize' }
-	)
-	let container: HTMLElement = null!
-	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
-		null!
-	)
-	const [terminalContainer, setTerminalContainer] =
-		createSignal<HTMLDivElement>(null!)
-	const [statusBarRef, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
-	const editorSize = createElementSize(editorContainer)
-	const terminalContainerSize = createElementSize(terminalContainer)
-	const statusBarSize = createElementSize(statusBarRef)
-
-	onMount(async () => {
-		document.fonts.ready.then(fontFaceSet => {
-			const fontFaces = [...fontFaceSet]
-		})
-	})
-
-	const { setColorMode } = useColorMode()
-	createEffect(() => {
-		setColorMode(isDark() ? 'dark' : 'light')
-	})
-	return (
-		<>
-			<CmdK code={code} setCode={setCode} refetch={refetch} />
-
-			<main
-				ref={container}
-				class="dockview-theme-dark"
-				style={{
-					'font-family': 'JetBrains Mono, monospace',
-					height: '100vh',
-					overflow: 'hidden',
-					'background-color': currentBackground()
-				}}
-			>
-				<Resizable
-					onSizesChange={size => {
-						if (size.length !== 2) return
-						if (size[0] === 0.5 && size[1] === 0.5) return
-
-						setHorizontalPanelSize(size)
-					}}
-					class="w-full flex"
-					style={{
-						'background-color': currentBackground(),
-						color: currentColor()
-					}}
-					orientation="horizontal"
-				>
-					<ResizablePanel
-						class="overflow-x-hidden"
-						initialSize={horizontalPanelSize()?.[0]}
-					>
-						<FileSystem traversedNodes={traversedNodes} />
-					</ResizablePanel>
-					<ResizableHandle class={isDark() ? 'bg-gray-800' : 'bg-gray-200'} />
-					<ResizablePanel
-						class="overflow-hidden"
-						initialSize={horizontalPanelSize()?.[1]}
-					>
-						<Resizable
-							onSizesChange={size => {
-								if (size.length !== 2) return
-								if (size[0] === 0.5 && size[1] === 0.5) return
-								setVerticalPanelSize(size)
-							}}
-							class="w-full"
-							style={{
-								'background-color': currentBackground(),
-								color: currentColor()
-							}}
-							orientation="vertical"
-						>
-							<ResizablePanel
-								ref={setEditorContainer}
-								class="overflow-hidden"
-								initialSize={verticalPanelSize()[0]}
-							>
-								<Show when={filePath()}>
-									<EditorTabs filePath={filePath} />
-
-									<Editor
-										code={code}
-										setCode={setCode}
-										size={editorSize}
-										isWorkerReady={isWorkerReady}
-									/>
-								</Show>
-							</ResizablePanel>
-							<ResizableHandle
-								class={isDark() ? 'bg-gray-800' : 'bg-gray-200'}
-							/>
-							<ResizablePanel
-								class="overflow-hidden p-2"
-								initialSize={verticalPanelSize()[1]}
-								ref={setTerminalContainer}
-							>
-								<Terminal size={terminalContainerSize} />
-							</ResizablePanel>
-						</Resizable>
-					</ResizablePanel>
-				</Resizable>
-
-				<StatusBar ref={setStatusBarRef} isTs={isTs} />
-			</main>
-		</>
-	)
-}
+	currentColor
+} from '~/stores/themeStore'
+import '~/xterm.css'
+import { Main } from './modules/main/Main'
 
 const App: Component = () => {
 	const storageManager = createLocalStorageManager('vite-ui-theme')
@@ -216,6 +48,7 @@ const App: Component = () => {
 		const fontSize = `${baseFontSize()}px`
 		document.documentElement.style.fontSize = fontSize
 	})
+
 	return (
 		<EditorFSProvider>
 			<TerminalFSProvider>

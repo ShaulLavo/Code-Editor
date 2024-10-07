@@ -1,52 +1,63 @@
 import { makePersisted } from '@solid-primitives/storage'
 
-import { createEffect, createSignal } from 'solid-js'
+import { Extension } from '@codemirror/state'
+import { createSignal } from 'solid-js'
 import {
 	duotoneDark,
-	duotoneLight,
-	xTermDuotoneDarkTheme,
-	xTermDuotoneLightTheme,
 	duotoneDarkBracketColors,
-	duotoneLightBracketColors
+	duotoneLight,
+	duotoneLightBracketColors,
+	xTermDuotoneDarkTheme,
+	xTermDuotoneLightTheme
 } from '~/themes/duotone'
 import {
 	githubDark,
-	githubLight,
-	xTermGithubDarkTheme,
-	xTermGithubLightTheme,
 	githubDarkBracketColors,
-	githubLightBracketColors
+	githubLight,
+	githubLightBracketColors,
+	xTermGithubDarkTheme,
+	xTermGithubLightTheme
 } from '~/themes/github'
 import {
+	dark,
+	darkBracketColors,
+	darkColors,
+	light,
+	lightBracketColors,
+	lightColors,
+	xTermDarkTheme,
+	xTermlightTheme
+} from '~/themes/light'
+import {
 	tokyoNight,
-	xTermTokyoNightTheme,
-	tokyoNightBracketColors
+	tokyoNightBracketColors,
+	xTermTokyoNightTheme
 } from '~/themes/toktoNight'
 import {
 	tokyoNightDay,
-	xTermTokyoNightDayTheme,
-	tokyoNightDayBracketColors
+	tokyoNightDayBracketColors,
+	xTermTokyoNightDayTheme
 } from '~/themes/tokyoNightDay'
 import {
 	tokyoNightStorm,
-	xTermTokyoNightStormTheme,
-	tokyoNightStormBracketColors
+	tokyoNightStormBracketColors,
+	xTermTokyoNightStormTheme
 } from '~/themes/tokyoNightStorm'
 import {
 	whiteDark,
-	whiteLight,
-	xTermWhiteDarkTheme,
-	xTermWhiteLightTheme,
 	whiteDarkBracketColors,
-	whiteLightBracketColors
+	whiteLight,
+	whiteLightBracketColors,
+	xTermWhiteDarkTheme,
+	xTermWhiteLightTheme
 } from '~/themes/white'
 import {
+	xCodeDarkBracketColors,
+	xCodeLightBracketColors,
 	xTermXcodeDarkTheme,
 	xTermXcodeLightTheme,
 	xcodeDark,
-	xcodeLight,
-	xCodeDarkBracketColors,
-	xCodeLightBracketColors
+	xcodeLight
 } from '~/themes/xcode'
 import {
 	baseColors,
@@ -54,17 +65,7 @@ import {
 	poimandresBracketColors,
 	xTermPoimandresTheme
 } from '../themes/poimandres'
-import { useColorMode } from '@kobalte/core'
-import {
-	dark,
-	darkBracketColors,
-	darkColors,
-	light,
-	lightColors,
-	xTermDarkTheme,
-	xTermlightTheme
-} from '~/themes/light'
-import { Extension } from '@codemirror/state'
+import { mojo, mojoBracketColors, xTermMojoTheme } from '~/themes/mojo'
 
 type ThemeSettingType = {
 	theme: Extension
@@ -74,8 +75,16 @@ type ThemeSettingType = {
 	xTermTheme: any
 	color1: string
 	color2: string
-	rainbowBracket: Record<string, string>
+	rainbowBracket: Record<BracketColors, `#${string}`>
 }
+type BracketColors =
+	| 'red'
+	| 'orange'
+	| 'yellow'
+	| 'green'
+	| 'blue'
+	| 'indigo'
+	| 'violet'
 
 const themeSettings = {
 	xcodeDark: {
@@ -194,7 +203,7 @@ const themeSettings = {
 		color: baseColors.white,
 		mode: 'dark',
 		xTermTheme: xTermPoimandresTheme,
-		color1: '\x1b[38;2;208;103;157m', // Hot Red - Strings and meta
+		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;255m',
 		rainbowBracket: poimandresBracketColors
 	},
@@ -206,7 +215,7 @@ const themeSettings = {
 		xTermTheme: xTermlightTheme,
 		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;253m',
-		rainbowBracket: lightColors
+		rainbowBracket: lightBracketColors
 	},
 	dark: {
 		theme: dark,
@@ -228,14 +237,24 @@ const themeSettings = {
 		color1: '',
 		color2: '',
 		rainbowBracket: {
-			red: 'red',
-			orange: 'yellow',
-			yellow: 'brightYellow',
-			green: 'green',
-			blue: 'blue',
-			indigo: 'brightBlue',
-			violet: 'magenta'
+			red: '#FF0000',
+			orange: '#FFA500',
+			yellow: '#FFFF00',
+			green: '#008000',
+			blue: '#0000FF',
+			indigo: '#00BFFF',
+			violet: '#FF00FF'
 		}
+	},
+	mojo: {
+		theme: mojo,
+		background: '#1E1E1E',
+		color: '#A6A6A6',
+		mode: 'dark',
+		xTermTheme: xTermMojoTheme,
+		color1: '\x1b[38;2;200;100;100m',
+		color2: '\x1b[38;2;65;166;217m',
+		rainbowBracket: mojoBracketColors
 	}
 } as const satisfies Record<string, ThemeSettingType>
 
@@ -270,18 +289,18 @@ const termColors = () => ({
 })
 
 export {
+	baseFontSize,
+	bracketColors,
 	currentBackground,
 	currentColor,
 	currentTheme,
 	currentThemeName,
 	isDark,
+	setBaseFontSize,
 	setTheme,
 	termColors,
 	themeSettings,
-	xTermTheme,
-	baseFontSize,
-	setBaseFontSize,
-	bracketColors
+	xTermTheme
 }
 
 export type { ThemeKey, ThemeSetting }

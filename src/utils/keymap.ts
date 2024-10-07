@@ -40,9 +40,11 @@ export function createKeymap(fsCtx: FileSystemCtx) {
 					return false
 				}
 				fileMap.set(filePath()!, currentCode)
-				fs.writeFile(filePath()!, currentCode).then(() => {
-					console.log('saved', filePath())
-				})
+				fs()
+					?.write(filePath()!, currentCode)
+					.then(() => {
+						console.log('saved', filePath())
+					})
 				return true
 			},
 			preventDefault: true

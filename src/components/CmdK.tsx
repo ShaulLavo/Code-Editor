@@ -30,13 +30,13 @@ import {
 	CommandSeparator,
 	CommandShortcut
 } from '~/components/ui/command'
-import { compilerOptions } from '~/constants/constants'
+import { compilerOptions, EDITOR_TAB_KEY } from '~/constants/constants'
 import { demoNodes, nextApp } from '~/constants/demo/nodes'
 import { useEditorFS } from '~/context/FsContext'
 import {
-	createFileSystemStructure,
-	deleteAll
-} from '~/fileSystem/fileSystem.service'
+	clearTabs,
+	createFileSystemStructure
+} from '~/modules/fileSystem/fileSystem.service'
 import { Formmater, getConfigFromExt } from '~/format'
 import { setShowLineNumber, showLineNumber } from '~/stores/editorStore'
 import {
@@ -85,7 +85,7 @@ export const CmdK: Component<HeaderProps> = props => {
 				<Command
 					style={{ color: currentColor(), background: currentBackground() }}
 					class="rounded-lg border shadow-md  h-96"
-					onValueChange={e => console.log(e)}
+					onValueChange={e => console.info(e)}
 				>
 					<CommandInput placeholder="Type a command or search..." />
 					{/* <BaseItems {...props} setCurrentMenu={setCurrentMenu} /> */}
@@ -120,7 +120,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 	setCurrentMenu,
 	setOpen
 }) => {
-	const { fs, currentExtension, setCurrentPath, clearTabs, fileMap } =
+	const { fs, currentExtension, setCurrentPath, fileMap, setLastKnownFile } =
 		useEditorFS()
 	return (
 		<CommandList>
@@ -168,8 +168,9 @@ const BaseItems: Component<BaseItemsProps> = ({
 
 				<CommandItem
 					onSelect={async () => {
-						await deleteAll('root', fs)
-						await clearTabs(fileMap)
+						await fs()?.deleteAll()
+						setLastKnownFile('')
+						clearTabs(fileMap, fs()!, EDITOR_TAB_KEY)
 						setCurrentPath('')
 						refetch()
 						setOpen(false)
@@ -180,7 +181,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 
 				<CommandItem
 					onSelect={async () => {
-						await createFileSystemStructure(nextApp, fs)
+						await createFileSystemStructure(nextApp, fs()!)
 						refetch()
 						setOpen(false)
 					}}
@@ -190,7 +191,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 
 				<CommandItem
 					onSelect={async () => {
-						await createFileSystemStructure(demoNodes, fs)
+						await createFileSystemStructure(demoNodes, fs()!)
 						refetch()
 						setOpen(false)
 					}}

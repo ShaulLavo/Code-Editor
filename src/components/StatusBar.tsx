@@ -1,19 +1,19 @@
 import { Accessor, Component, For, Setter, createSignal } from 'solid-js'
-import { currentBackground, currentColor } from './stores/themeStore'
+import { currentBackground, currentColor } from '~/stores/themeStore'
 import { createContext } from 'solid-js'
 
-import { HoverCard } from './components/HoverCard'
+import { HoverCard } from '~/components/HoverCard'
 import {
 	currentColumn,
 	currentLine,
 	currentSelection,
 	isGitLoading,
 	isTsLoading
-} from './stores/editorStore'
-import git from './assets/icons/git.svg'
+} from '~/stores/editorStore'
+import git from '~/assets/icons/git.svg'
 import { Spinner, SpinnerType } from 'solid-spinner'
-import { GitIcon } from './components/GitIcon'
-import { Git, TypeScript } from './assets/customIcons'
+import { GitIcon } from '~/components/GitIcon'
+import { Git, TypeScript } from '~/assets/customIcons'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>

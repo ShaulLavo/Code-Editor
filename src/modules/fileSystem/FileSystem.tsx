@@ -1,27 +1,15 @@
-import {
-	Accessor,
-	For,
-	Setter,
-	Suspense,
-	createSignal,
-	on,
-	onMount,
-	useContext,
-	type Component
-} from 'solid-js'
+import { For, Suspense, createSignal, type Component } from 'solid-js'
 
-import { FilesystemItem } from './FilesystemItem'
-import { Node } from './fileSystem.service'
 import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
+import { useEditorFS } from '~/context/FsContext'
 import { createInnerZoom } from '~/hooks/createInnerZoom'
-import { makeEventListenerStack } from '@solid-primitives/event-listener'
+import { FilesystemItem } from './FilesystemItem'
 
-interface FileSystemProps {
-	traversedNodes: () => Node[]
-}
+interface FileSystemProps {}
 
-export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
+export const FileSystem: Component<FileSystemProps> = () => {
 	let list: HTMLUListElement = null!
+	const { traversedNodes } = useEditorFS()
 	const [container, setContainer] = createSignal<HTMLDivElement>(null!)
 	const { fontSize } = createInnerZoom({
 		ref: container,
@@ -30,13 +18,14 @@ export const FileSystem: Component<FileSystemProps> = ({ traversedNodes }) => {
 
 	return (
 		<div ref={setContainer} class="h-screen relative z-50">
-			<h5 class="pl-8 text-sm">EXPLORER</h5>
+			<h5 class="pl-0.5 text-sm">EXPLORER</h5>
 			<Suspense fallback={'loading...'}>
-				<ul ref={list}>
+				<AutoAnimeListContainer ref={list} class="pb-10 ">
+					{/* <For each={(traversedNodes()?.[0] as Folder | undefined)?.children}> */}
 					<For each={traversedNodes()}>
 						{node => <FilesystemItem node={node} fontSize={fontSize()} />}
 					</For>
-				</ul>
+				</AutoAnimeListContainer>
 			</Suspense>
 		</div>
 	)
