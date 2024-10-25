@@ -1,30 +1,33 @@
 import { VsChevronRight } from 'solid-icons/vs'
 import {
-	Accessor,
 	batch,
 	createEffect,
 	createSignal,
 	For,
+	onCleanup,
 	onMount,
-	Setter,
 	Show
 } from 'solid-js'
 
-import { makeEventListenerStack } from '@solid-primitives/event-listener'
 import { AutoAnimeListContainer } from '~/components/AutoAnimatedList'
-import { useEditorFS } from '~/context/FsContext'
-import { getLighterRgbColor } from '~/lib/utils'
-import { isFile, isFolder, Node } from '~/modules/fileSystem/fileSystem.service'
+import { pathsToOpen, setPathsToOpen } from '~/context/FsContext'
+import { useFsDnd } from '~/hooks/usFsDnd'
+import { getLighterRgbColor } from '~/lib/color'
+import { isFolder, Node } from '~/modules/fileSystem/fileSystem.service'
+import { currentEditorFs } from '~/stores/appStateStore'
 import { bracketColors, isDark } from '~/stores/themeStore'
+import { FileContextMenu } from './fileContextMenu'
 import { dirNameIconMap, fileExtIconMap } from './fileSystemIcons'
+import hotkeys from 'hotkeys-js'
+import { runOncePerTick } from '~/lib/utils'
 
-declare module 'solid-js' {
-	namespace JSX {
-		interface Directives {
-			sortable: boolean
-		}
-	}
-}
+// declare module 'solid-js' {
+// 	namespace JSX {
+// 		interface Directives {
+// 			sortable: boolean
+// 		}
+// 	}
+// }
 
 interface FilesystemItemProps {
 	node: Node
@@ -32,150 +35,9 @@ interface FilesystemItemProps {
 	fontSize?: number
 }
 
-interface fsDndProps {
-	isOpen: Accessor<boolean>
-	setIsOpen: Setter<boolean>
-	thisPath: string
-	node: Node
-}
-const useFsDnd = (props: fsDndProps) => {
-	const { isOpen, setIsOpen } = props
-	const {
-		setCurrentPath,
-		fs,
-		refetchNodes,
-		setPathsToOpen,
-		fileMap,
-		filePath
-	} = useEditorFS()
-
-	const [dropzone, setDropzone] = createSignal<HTMLLIElement>(null!)
-	const [draggable, setDraggable] = createSignal<HTMLSpanElement>(null!)
-	function handleDragStart(event: DragEvent) {
-		if (!event.dataTransfer) return
-		event.dataTransfer.setData('text/plain', draggable().id)
-	}
-
-	async function handleDrop(event: DragEvent) {
-		event.preventDefault()
-		event.stopPropagation()
-
-		if (!event.dataTransfer) return
-
-		const to = (event.target as HTMLElement)?.id
-		const from = event.dataTransfer.getData('text/plain')
-		const fileSystem = fs()
-
-		if (!fileSystem || !from || !to) return
-
-		const fromPath = from.split('/').slice(1).join('/')
-		let toPath = to.split('/').slice(1).join('/')
-		let toDirPath = toPath
-		let fromDirPath = fromPath
-		try {
-			const [fromInfo, targetInfo] = await Promise.all([
-				fileSystem.info(fromPath)!,
-				fileSystem.info(toPath)!
-			])
-
-			const isFromDir = fromInfo.type === 'directory'
-			const isTargetDir = targetInfo.type === 'directory'
-
-			if (!isTargetDir) {
-				toDirPath = toPath.substring(0, toPath.lastIndexOf('/'))
-			}
-			if (!isFromDir) {
-				fromDirPath = fromPath.substring(0, fromPath.lastIndexOf('/'))
-			}
-
-			if (fromDirPath === toDirPath) {
-				console.warn('Cannot move a file or directory to the same directory.')
-				return
-			}
-
-			// setNodes(produce(nodes => moveNode(unwrap(nodes!), fromPath, toDirPath)))
-
-			if (isFromDir) {
-				await fileSystem.moveDirectory(fromPath, toDirPath)
-			} else {
-				await fileSystem.moveFile(fromPath, toDirPath)
-			}
-
-			// non-optimistic refetch
-			await refetchNodes()
-			const from = fileMap.get('/' + fromPath)
-
-			if (from) {
-				const fromP = '/' + fromPath
-				const newPath = '/' + toDirPath + '/' + fromPath.split('/').pop()
-				batch(() => {
-					fileMap.delete(fromP)
-					fileMap.set(newPath, from)
-					if (fromP === filePath()) {
-						setCurrentPath(newPath)
-					}
-				})
-			}
-		} catch (error) {
-			console.error('Move operation failed:', error)
-			// setNodes(produce(nodes => moveNode(unwrap(nodes!), toPath, fromDirPath)))
-		}
-	}
-
-	function dragOver(event: DragEvent) {
-		event.preventDefault()
-		event.stopPropagation()
-
-		if (!event.dataTransfer) return
-		event.dataTransfer.dropEffect = 'move'
-
-		setTimeout(() => {
-			if (!isOpen()) {
-				setIsOpen(true)
-				setPathsToOpen(current => [...current, props.thisPath])
-			}
-		}, 300)
-
-		if (!dropzone().style.backgroundColor) {
-			dropzone().style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
-		}
-	}
-
-	function dragEnter(event: DragEvent) {
-		event.preventDefault()
-		if (isFolder(props.node)) event.stopPropagation()
-		if (isFile(props.node)) return
-		if (!event.dataTransfer) return
-
-		event.dataTransfer.dropEffect = 'move'
-
-		if (!dropzone().style.backgroundColor) {
-			dropzone().style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
-		}
-	}
-	onMount(() => {
-		const [listenSpan] = makeEventListenerStack(draggable(), {})
-		listenSpan('dragstart', handleDragStart)
-		const fileSystem = fs()
-		if (!fileSystem) return
-		if (isFile(props.node)) return
-		const [listenLi] = makeEventListenerStack(dropzone(), {})
-		listenLi('drop', handleDrop)
-		listenLi('dragenter', dragOver)
-		listenLi('dragover', dragEnter)
-		listenLi('dragleave', async e => {
-			if (dropzone().style.backgroundColor === '') return
-			dropzone().style.backgroundColor = ''
-		})
-	})
-
-	return { setDropzone, setDraggable }
-}
-
 export function FilesystemItem(props: FilesystemItemProps) {
-	const { currentPath, setCurrentPath, setPathsToOpen, pathsToOpen } =
-		useEditorFS()
-	const [isOpen, setIsOpen] = createSignal(
+	const { currentPath, setCurrentPath, fs, refetchNodes } = currentEditorFs()
+	let [_isOpen, _setIsOpen] = createSignal(
 		(() => {
 			if (!isFolder(props.node)) return false
 			const fullPath = `${props.fullPath ?? ''}/${props.node.name}`
@@ -183,41 +45,32 @@ export function FilesystemItem(props: FilesystemItemProps) {
 		})()
 	)
 
+	const [newName, setNewName] = createSignal('')
 	const thisPath = `${props.fullPath ?? ''}/${props.node.name}`
 	const ext = () =>
 		props.node.name.split('.').pop() as keyof typeof fileExtIconMap
 
 	const fileIconPath = () => fileExtIconMap[ext()]
-	const fileIcon = () => {
-		return fileIconPath() ? (
-			<img
-				src={fileIconPath()}
-				width={props.fontSize}
-				height={props.fontSize}
-			/>
-		) : (
-			<img
-				src={fileExtIconMap['documentIcon']}
-				width={props.fontSize}
-				height={props.fontSize}
-			/>
-		)
-	}
-	const folderIcon = () =>
-		isOpen() ? (
-			<img
-				src={dirNameIconMap['base-open']}
-				width={props.fontSize}
-				height={props.fontSize}
-			/>
-		) : (
-			<img
-				src={dirNameIconMap['base']}
-				width={props.fontSize}
-				height={props.fontSize}
-			/>
-		)
+	const isMissingName = () => props.node.name === fs()!.NO_NAME_PLACEHOLDER
+	const fileIcon = () => (
+		<img
+			src={fileIconPath() ? fileIconPath() : fileExtIconMap['documentIcon']}
+			width={props.fontSize}
+			height={props.fontSize}
+		/>
+	)
+
+	const folderIcon = () => (
+		<img
+			src={isOpen() ? dirNameIconMap['base-open'] : dirNameIconMap['base']}
+			width={props.fontSize}
+			height={props.fontSize}
+		/>
+	)
+	const Icon = () => (isFolder(props.node) ? folderIcon() : fileIcon())
+
 	const handleClick = () => {
+		if (isMissingName()) return
 		batch(() => {
 			if (isFolder(props.node) && props.node.children.length > 0) {
 				const open = isOpen()
@@ -225,7 +78,6 @@ export function FilesystemItem(props: FilesystemItemProps) {
 					setPathsToOpen(current => current.filter(path => path !== thisPath))
 				}
 				setIsOpen(!open)
-				// return
 			}
 			setCurrentPath(thisPath)
 		})
@@ -237,67 +89,123 @@ export function FilesystemItem(props: FilesystemItemProps) {
 		}
 	})
 
-	const { setDropzone, setDraggable } = useFsDnd({
-		isOpen,
-		setIsOpen,
+	const { setDropzone, setDraggable, localIsOpen, setLocalIsOpen } = useFsDnd({
+		isOpen: _isOpen,
+		setIsOpen: _setIsOpen,
 		thisPath,
 		node: props.node
 	})
-
+	const isOpen = () => localIsOpen() || _isOpen()
+	const setIsOpen = (open: boolean) => {
+		_setIsOpen(open)
+		setLocalIsOpen(open)
+	}
 	const getLineColor = () => {
 		const colorByDepth =
 			Object.values(bracketColors())[(thisPath.split('/').length - 1) % 7]
 		const alpha = isDark() ? 0.25 : 0.5
 		return getLighterRgbColor(colorByDepth, alpha)
 	}
+	const handleRename = runOncePerTick((e: FocusEvent | KeyboardEvent) => {
+		if (!isMissingName()) return
+		;(async () => {
+			try {
+				if (newName() !== '') {
+					try {
+						await fs()!.rename(thisPath, newName())
+						// console.log('Renamed:', thisPath, 'to', newName())
+						await refetchNodes()
+					} catch (renameError) {
+						console.error('Error renaming:', renameError)
+					}
+				} else {
+					try {
+						await fs()!.delete(thisPath)
+						await refetchNodes()
+					} catch (deleteError) {
+						console.error('Error deleting:', deleteError)
+					}
+				}
+			} catch (error) {
+				console.error('Unexpected error in handleRename:', error)
+			}
+		})()
+
+		return true
+	})
 
 	return (
-		<AutoAnimeListContainer
-			as="li"
-			id={'drop' + thisPath}
-			setRef={setDropzone}
-			class={`transition-colors border-l  ${isDark() ? 'border-opacity-20' : 'border-opacity-40'}`}
-			style={{
-				'border-color': getLineColor(),
-				'margin-left': '-0.5rem',
-				'padding-left': '0.5rem'
-			}}
-		>
-			<span
-				id={'drag' + thisPath}
-				draggable="true"
-				ref={setDraggable}
+		<FileContextMenu path={thisPath} node={props.node}>
+			<AutoAnimeListContainer
+				as="li"
+				id={'drop' + thisPath}
+				setRef={setDropzone}
+				class={`transition-colors border-l ${isDark() ? 'border-opacity-20' : 'border-opacity-40'}`}
 				style={{
-					'font-size': `${props.fontSize}px`,
-					'padding-bottom': '0.1rem'
-					// 'padding-right': '1rem'
+					'border-color': getLineColor(),
+					'margin-left': '-0.5rem',
+					'padding-left': '0.5rem'
 				}}
-				class={`flex items-center gap-1.5  rounded select-none ${
-					currentPath() === thisPath
-						? `${isDark() ? 'bg-white' : 'bg-blue-300'} bg-opacity-20 font-bold text-xs`
-						: 'text-gray-600 text-xs'
-				} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} hover:bg-opacity-20  hover:font-bold cursor-pointer`}
-				onClick={handleClick}
 			>
-				{isFolder(props.node) && props.node.children.length > 0 && (
-					<button class="p-1 -m-1">
-						<VsChevronRight
-							class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
+				<span
+					id={'drag' + thisPath}
+					draggable="true"
+					ref={setDraggable}
+					style={{
+						'font-size': `${props.fontSize}px`,
+						'padding-bottom': '0.1rem'
+					}}
+					class={`flex items-center gap-1.5  rounded select-none ${
+						currentPath() === thisPath
+							? `${isDark() ? 'bg-white' : 'bg-blue-300'} 
+							bg-opacity-20 font-bold text-xs`
+							: 'text-gray-600 text-xs'
+					} ${isDark() ? 'hover:bg-white' : 'hover:bg-gray-500'} 
+					hover:bg-opacity-20  hover:font-bold cursor-pointer`}
+					onClick={handleClick}
+				>
+					{isFolder(props.node) && props.node.children.length > 0 && (
+						<button class="p-1 -m-1">
+							<VsChevronRight
+								class={`size-4 text-gray-500 ${isOpen() ? 'rotate-90' : ''}`}
+							/>
+						</button>
+					)}
+					<Icon />
+					<Show when={isMissingName()} fallback={props.node.name}>
+						<input
+							ref={ref =>
+								onMount(() => {
+									ref.focus()
+									ref.addEventListener('keydown', e => {
+										if (e.key === 'Enter') {
+											handleRename(e)
+										}
+									})
+								})
+							}
+							onBlur={handleRename}
+							onInput={({ currentTarget: { value } }) => setNewName(value)}
+							style={{ color: 'black' }}
+							class={`${isDark() ? 'bg-white' : 'bg-blue-300'} 
+							 px-1 w-full rounded bg-opacity-20`}
 						/>
-					</button>
-				)}
-				{isFolder(props.node) ? folderIcon() : fileIcon()}
-				{props.node.name}
-			</span>
-			<Show when={isOpen()}>
-				<ul class="pl-4">
-					<For each={isFolder(props.node) && props.node.children}>
-						{childNode => (
-							<FilesystemItem {...props} node={childNode} fullPath={thisPath} />
-						)}
-					</For>
-				</ul>
-			</Show>
-		</AutoAnimeListContainer>
+					</Show>
+				</span>
+				<Show when={isOpen()}>
+					<ul class="pl-4">
+						<For each={isFolder(props.node) && props.node.children}>
+							{childNode => (
+								<FilesystemItem
+									{...props}
+									node={childNode}
+									fullPath={thisPath}
+								/>
+							)}
+						</For>
+					</ul>
+				</Show>
+			</AutoAnimeListContainer>
+		</FileContextMenu>
 	)
 }

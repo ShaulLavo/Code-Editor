@@ -1,11 +1,18 @@
-import { Component, For } from 'solid-js'
-import { useEditorFS } from '~/context/FsContext'
+import { Component, createEffect, For } from 'solid-js'
+import { useFs } from '~/context/FsContext'
+import { currentEditorFs } from '~/stores/appStateStore'
 
-export const EditorNav: Component = () => {
-	const { filePath } = useEditorFS()
-	// useShortcuts(code, setCode
+interface EditorNavProps {
+	index: number
+}
+export const EditorNav: Component<EditorNavProps> = ({ index }) => {
+	const ctx = useFs('editor-' + index)
+	createEffect(() => {
+		ctx.filePath()
+	})
 	const buttons = () =>
-		filePath()
+		ctx
+			.filePath()
 			?.split('/')
 			.filter(part => part !== '')
 

@@ -10,7 +10,7 @@ export const defaultSettingsTokyoNightStorm: CreateThemeOptions['settings'] = {
 	gutterBackground: '#24283b',
 	gutterForeground: '#7982a9',
 	gutterBorder: 'transparent',
-	lineHighlight: '#292e427a'
+	lineHighlight: '#292e424c'
 }
 
 export const tokyoNightStormStyle: CreateThemeOptions['styles'] = [

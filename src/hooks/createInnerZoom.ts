@@ -4,7 +4,7 @@ import { createSignal, createMemo, onMount, Accessor } from 'solid-js'
 import { baseFontSize } from '~/stores/themeStore'
 
 interface InnerZoomOptions {
-	ref: Accessor<HTMLElement>
+	ref: HTMLElement | Accessor<HTMLElement>
 	key: string
 	aggressiveness?: number
 	sync?(fontSize: number): void

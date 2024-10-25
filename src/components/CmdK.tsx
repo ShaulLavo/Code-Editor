@@ -5,6 +5,7 @@ import {
 	Switch,
 	createEffect,
 	createSignal,
+	on,
 	onCleanup,
 	onMount,
 	useContext,
@@ -30,14 +31,13 @@ import {
 	CommandSeparator,
 	CommandShortcut
 } from '~/components/ui/command'
-import { compilerOptions, EDITOR_TAB_KEY } from '~/constants/constants'
+import { compilerOptions } from '~/constants/constants'
 import { demoNodes, nextApp } from '~/constants/demo/nodes'
-import { useEditorFS } from '~/context/FsContext'
 import {
 	clearTabs,
 	createFileSystemStructure
 } from '~/modules/fileSystem/fileSystem.service'
-import { Formmater, getConfigFromExt } from '~/format'
+import { Formatter, getConfigFromExt } from '~/format'
 import { setShowLineNumber, showLineNumber } from '~/stores/editorStore'
 import {
 	ThemeKey,
@@ -47,7 +47,8 @@ import {
 	setTheme,
 	themeSettings
 } from '~/stores/themeStore'
-import { capitalizeFirstLetter } from '~/utils/string'
+import { capitalizeFirstLetter } from '~/lib/string'
+import { currentEditorFs } from '~/stores/appStateStore'
 
 interface HeaderProps {
 	code: Resource<string | undefined>
@@ -58,7 +59,27 @@ interface HeaderProps {
 export const CmdK: Component<HeaderProps> = props => {
 	const [open, setOpen] = createSignal(false)
 	const [currentMenu, setCurrentMenu] = createSignal<'base' | 'theme'>('base')
-	createEffect(() => {
+	const [value, setValue] = createSignal('')
+
+	// super hacky way to set the default value
+	const defaultValue = () =>
+		currentMenu() === 'base' ? 'Change Theme' : currentThemeName()
+	let hasRun = false
+	createEffect(
+		on(currentMenu, () => {
+			hasRun = false
+		})
+	)
+	createEffect(
+		on(value, () => {
+			if (!hasRun) {
+				setValue(defaultValue())
+				hasRun = true
+			}
+		})
+	)
+
+	onMount(() => {
 		const down = (e: KeyboardEvent) => {
 			if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault()
@@ -72,6 +93,7 @@ export const CmdK: Component<HeaderProps> = props => {
 			document.removeEventListener('keydown', down)
 		})
 	})
+
 	createEffect(() => {
 		if (!open()) {
 			setTimeout(() => {
@@ -85,23 +107,31 @@ export const CmdK: Component<HeaderProps> = props => {
 				<Command
 					style={{ color: currentColor(), background: currentBackground() }}
 					class="rounded-lg border shadow-md  h-96"
-					onValueChange={e => console.info(e)}
+					onValueChange={setValue}
+					value={value()}
+					loop
 				>
-					<CommandInput placeholder="Type a command or search..." />
+					<CommandInput
+						onInput={e => {
+							console.log('input', e.target.value)
+						}}
+						placeholder="Type a command or search..."
+					/>
 					{/* <BaseItems {...props} setCurrentMenu={setCurrentMenu} /> */}
-
-					<Switch>
-						<Match when={currentMenu() === 'base'}>
-							<BaseItems
-								{...props}
-								setCurrentMenu={setCurrentMenu}
-								setOpen={setOpen}
-							/>
-						</Match>
-						<Match when={currentMenu() === 'theme'}>
-							<ThemeItems setOpen={setOpen} />
-						</Match>
-					</Switch>
+					<CommandList>
+						<Switch>
+							<Match when={currentMenu() === 'base'}>
+								<BaseItems
+									{...props}
+									setCurrentMenu={setCurrentMenu}
+									setOpen={setOpen}
+								/>
+							</Match>
+							<Match when={currentMenu() === 'theme'}>
+								<ThemeItems setOpen={setOpen} />
+							</Match>
+						</Switch>
+					</CommandList>
 				</Command>
 			</CommandDialog>
 		</div>
@@ -121,9 +151,9 @@ const BaseItems: Component<BaseItemsProps> = ({
 	setOpen
 }) => {
 	const { fs, currentExtension, setCurrentPath, fileMap, setLastKnownFile } =
-		useEditorFS()
+		currentEditorFs()
 	return (
-		<CommandList>
+		<>
 			<CommandEmpty>No results found.</CommandEmpty>
 
 			<CommandGroup heading="Theme">
@@ -141,7 +171,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 					onSelect={async () => {
 						if (code() == undefined) return
 						setCode(
-							await Formmater.prettier(
+							await Formatter.prettier(
 								code()!,
 								getConfigFromExt(currentExtension()!)
 							)
@@ -170,7 +200,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 					onSelect={async () => {
 						await fs()?.deleteAll()
 						setLastKnownFile('')
-						clearTabs(fileMap, fs()!, EDITOR_TAB_KEY)
+						clearTabs(fileMap, fs()!, 'editor-' + currentEditorFs() + '-tab')
 						setCurrentPath('')
 						refetch()
 						setOpen(false)
@@ -199,7 +229,7 @@ const BaseItems: Component<BaseItemsProps> = ({
 					<span>Create New FS demoNodes</span>
 				</CommandItem>
 			</CommandGroup>
-		</CommandList>
+		</>
 	)
 }
 
@@ -220,7 +250,7 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 		)
 	)
 	return (
-		<CommandList>
+		<>
 			<CommandGroup heading="Dark mode">
 				<For each={Object.keys(darkModeThemes)}>
 					{theme => (
@@ -233,7 +263,8 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								props.setOpen(false)
 							}}
 							value={theme}
-
+							// data-selected={currentThemeName() === theme}
+							// isSelected={currentThemeName() === theme}
 							// isDefaultSelected={currentThemeName() === theme}
 						>
 							<span>
@@ -257,6 +288,7 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 								props.setOpen(false)
 							}}
 							value={theme}
+							isSelected={currentThemeName() === theme}
 							// isDefaultSelected={currentThemeName() === theme}
 						>
 							<span>
@@ -266,6 +298,6 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 					)}
 				</For>
 			</CommandGroup>
-		</CommandList>
+		</>
 	)
 }

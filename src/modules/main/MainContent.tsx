@@ -1,18 +1,31 @@
 import { NullableSize } from '@solid-primitives/resize-observer'
-import { Accessor, Setter, Show, type Component } from 'solid-js'
+import {
+	Accessor,
+	createSignal,
+	For,
+	Setter,
+	Show,
+	type Component
+} from 'solid-js'
 import { EditorTabs } from '~/components/EditorTabs'
 import {
 	Resizable,
 	ResizableHandle,
 	ResizablePanel
 } from '~/components/ui/resizable'
-import { useEditorFS } from '~/context/FsContext'
 import { Editor } from '~/modules/editorModule/Editor'
-import { currentBackground, currentColor, isDark } from '~/stores/themeStore'
+import {
+	setVerticalPanelSize,
+	updateEditorPanelSize,
+	verticalPanelSize
+} from '~/stores/appStateStore'
+import {
+	currentBackground,
+	currentColor,
+	dragHandleColor
+} from '~/stores/themeStore'
 import { Terminal } from '~/Terminal'
 import '~/xterm.css'
-import { getLighterRgbColor } from '~/lib/utils'
-import { setVerticalPanelSize, verticalPanelSize } from '~/stores/appStateStore'
 
 interface MainContentProps {
 	setEditorContainer: Setter<HTMLDivElement>
@@ -20,10 +33,10 @@ interface MainContentProps {
 	editorSize: Readonly<NullableSize>
 	terminalContainerSize: Readonly<NullableSize>
 	isWorkerReady: Accessor<boolean>
+	extraKeyBindings?: Record<string, () => boolean>
 }
-export const MainContent: Component<MainContentProps> = props => {
-	const { code, setCode, filePath } = useEditorFS()
 
+export const MainContent: Component<MainContentProps> = props => {
 	return (
 		<Resizable
 			onSizesChange={size => {
@@ -44,23 +57,15 @@ export const MainContent: Component<MainContentProps> = props => {
 				class="overflow-hidden"
 				initialSize={verticalPanelSize()[0]}
 			>
-				<Show when={filePath()}>
-					<EditorTabs filePath={filePath} />
-
-					<Editor
-						code={code}
-						setCode={setCode}
-						size={props.editorSize}
-						isWorkerReady={props.isWorkerReady}
-					/>
-				</Show>
+				<EditorLayout
+					extraKeyBindings={props.extraKeyBindings}
+					editorSize={props.editorSize}
+					isWorkerReady={props.isWorkerReady}
+				/>
 			</ResizablePanel>
 			<ResizableHandle
 				style={{
-					'background-color': getLighterRgbColor(
-						currentColor(),
-						isDark() ? 0.25 : 0.5
-					)
+					'background-color': dragHandleColor()
 				}}
 			/>
 			<ResizablePanel
@@ -70,6 +75,71 @@ export const MainContent: Component<MainContentProps> = props => {
 			>
 				<Terminal size={props.terminalContainerSize} />
 			</ResizablePanel>
+		</Resizable>
+	)
+}
+interface EditorLayoutProps {
+	editorSize: Readonly<NullableSize>
+	isWorkerReady: Accessor<boolean>
+	extraKeyBindings?: Record<string, () => boolean>
+}
+const EditorLayout = (props: EditorLayoutProps) => {
+	const [editorPanels, setEditorPanels] = createSignal([
+		{ id: 1, content: 'Editor 1' }
+		// { id: 2, content: 'Editor 2' }
+	])
+	const [editorSizes, setEditorSizes] = createSignal([1, 1])
+
+	const addEditorPanel = () => {
+		const newPanelId = editorPanels().length + 1
+		setEditorPanels([
+			...editorPanels(),
+			{ id: newPanelId, content: `Editor ${newPanelId}` }
+		])
+		const newSize = 1 / (editorPanels().length + 1)
+		setEditorSizes([...Array(editorPanels().length + 1).fill(newSize)])
+	}
+
+	return (
+		<Resizable
+			class="w-full"
+			onSizesChange={newSizes => {
+				if (newSizes.length === editorPanels().length) {
+					setEditorSizes(newSizes)
+					updateEditorPanelSize(0, newSizes)
+				}
+			}}
+			style={{
+				'background-color': currentBackground(),
+				color: currentColor()
+			}}
+			orientation="horizontal"
+			accessKey="horizontal"
+		>
+			<For each={editorPanels()}>
+				{(panel, index) => (
+					<>
+						<ResizablePanel
+							class="overflow-hidden"
+							initialSize={editorSizes()[index()]}
+							// initialSize={editorSizes()[index()]}
+						>
+							<EditorTabs index={index()} />
+							<Editor
+								extraKeyBindings={props.extraKeyBindings}
+								size={props.editorSize}
+								isWorkerReady={props.isWorkerReady}
+								index={index()}
+							/>
+						</ResizablePanel>
+						{index() < editorPanels().length - 1 && (
+							<ResizableHandle
+								style={{ 'background-color': dragHandleColor() }}
+							/>
+						)}
+					</>
+				)}
+			</For>
 		</Resizable>
 	)
 }

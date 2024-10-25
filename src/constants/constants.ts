@@ -1,4 +1,5 @@
 import ts from 'typescript'
+import { types } from 'util'
 
 export const compilerOptions: ts.CompilerOptions = {
 	target: ts.ScriptTarget.Latest,
@@ -7,12 +8,13 @@ export const compilerOptions: ts.CompilerOptions = {
 	allowSyntheticDefaultImports: true,
 	noEmit: true,
 	isolatedModules: true,
-	jsx: ts.JsxEmit.React
+	jsx: ts.JsxEmit.React,
+	types: ['jsdom', 'node', 'react'],
+	lib: ['es5', 'es6', 'dom']
 } as const
 
 export const EDITOR_FS_NAME = 'file-system'
 export const EDITOR_PATH_KEY = 'editorPath'
-export const EDITOR_TAB_KEY = 'editorTabs'
 
 export const TERMINAL_FS_NAME = 'file-system'
 export const TERMINAL_PATH_KEY = 'xTerm'

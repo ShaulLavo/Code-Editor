@@ -15,7 +15,7 @@ export const defaultSettingsDuotoneLight: CreateThemeOptions['settings'] = {
 	gutterBackground: '#faf8f5',
 	gutterForeground: '#cdc4b1',
 	gutterBorder: 'transparent',
-	lineHighlight: '#ddceb154'
+	lineHighlight: '#ddceb14c'
 } as const
 
 export const douToneLightStyle: CreateThemeOptions['styles'] = [
@@ -56,7 +56,7 @@ export const defaultSettingsDuotoneDark: CreateThemeOptions['settings'] = {
 	selectionMatch: '#91ff6c26',
 	gutterBackground: '#2a2734',
 	gutterForeground: '#545167',
-	lineHighlight: '#36334280'
+	lineHighlight: '#3633424c'
 } as const
 
 export const duotoneDarkStyle: CreateThemeOptions['styles'] = [

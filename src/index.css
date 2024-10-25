@@ -97,6 +97,7 @@
 
 @layer base {
 	* {
+		@apply box-border;
 		@apply border-border;
 	}
 	body {
@@ -166,9 +167,9 @@
 	border: none !important;
 }
 
-.cm-activeLineGutter {
+/* .cm-activeLineGutter {
 	color: var(--current-color) !important;
-}
+} */
 .cm-gutters {
 	border-right: none !important;
 	margin-right: 5px;

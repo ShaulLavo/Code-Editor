@@ -57,7 +57,7 @@ export const defaultSettingsGithubDark: CreateThemeOptions['settings'] = {
 	caret: '#c9d1d9',
 	selection: '#003d73',
 	selectionMatch: '#003d73',
-	lineHighlight: '#36334280'
+	lineHighlight: '#3633424c'
 } as const
 
 export const githubDarkStyle: CreateThemeOptions['styles'] = [

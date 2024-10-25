@@ -1,3 +1,5 @@
+import { it } from 'node:test'
+
 interface FileSystemAPI {
 	read(path: FilePath): Promise<File>
 	write(path: FilePath, content: string | ArrayBuffer): Promise<void>
@@ -29,6 +31,15 @@ type FilePath = string
 interface FileSystemInfo {
 	type: 'directory' | 'file'
 	name: string
+	size?: number // Size in bytes
+	mode: number // Permissions (octal)
+	nlink: number // Number of hard links
+	uid: number // User ID of owner
+	gid: number // Group ID of owner
+	atimeMs: number // Last access time in milliseconds
+	mtimeMs: number // Last modified time in milliseconds
+	ctimeMs: number // Change time in milliseconds
+	birthtimeMs: number // Creation time in milliseconds
 }
 interface CreateFileOptions {
 	recursiveDirs?: boolean
@@ -41,7 +52,6 @@ interface CreateDirectoryOptions {
 
 interface MoveOptions {
 	overwrite?: boolean
-	moveChildren?: boolean
 }
 interface CopyOptions {
 	overwrite?: boolean
@@ -51,7 +61,7 @@ interface DeleteOptions {
 	recursive?: boolean
 }
 
-type Extention =
+type Extension =
 	| 'txt'
 	| 'json'
 	| 'md'
@@ -69,6 +79,26 @@ interface BaseNode {
 	type: 'file' | 'directory'
 	handle: FileSystemHandle
 }
+interface FileSystemStats {
+	dev: number
+	ino: number
+	mode: number
+	nlink: number
+	uid: number
+	gid: number
+	rdev: number
+	size: number
+	blksize: number
+	blocks: number
+	atimeMs: number
+	mtimeMs: number
+	ctimeMs: number
+	birthtimeMs: number
+	atime: Date
+	mtime: Date
+	ctime: Date
+	birthtime: Date
+}
 
 export interface Folder extends BaseNode {
 	type: 'directory'
@@ -79,7 +109,7 @@ export interface Folder extends BaseNode {
 export interface Document extends BaseNode {
 	type: 'file'
 	handle: FileSystemFileHandle
-	extension: Extention
+	extension: Extension
 }
 export type FSNode = Document | Folder
 
@@ -89,16 +119,31 @@ export interface FSWatchEvent {
 }
 
 interface NodeAPI {
-	readFile(path: string): Promise<ArrayBuffer>
-	writeFile(path: string, data: string | ArrayBuffer): Promise<void>
+	readFile: (path: string, options?: any) => Promise<string | Buffer>
+	writeFile: (
+		file: string,
+		data: string | Buffer,
+		options?: any
+	) => Promise<void>
+	unlink: (path: string) => Promise<void>
+	readdir: (path: string, options?: any) => Promise<string[]>
+	mkdir: (path: string, options?: any) => Promise<void>
+	rmdir: (path: string) => Promise<void>
+	stat: (path: string) => Promise<FileSystemStats>
+	lstat: (path: string) => Promise<FileSystemStats>
+	readlink?: (path: string) => Promise<string>
+	symlink?: (target: string, path: string, type?: string) => Promise<void>
+	chmod?: (path: string, mode: string | number) => Promise<void>
 }
 const CHUNK_SIZE = 1024
 
 export class OPFS implements FileSystemAPI {
+	public NO_NAME_PLACEHOLDER = '<MISSING_NAME>'
 	private static _rootHandle: FileSystemDirectoryHandle | null = null
 
 	private watchers: Map<string, Set<(event: FSWatchEvent) => void>> = new Map()
 	private constructor() {}
+	NodeAPI: NodeAPI = new FileSystemWrapper(this)
 
 	static async create(): Promise<OPFS> {
 		if (!OPFS._rootHandle) {
@@ -116,19 +161,23 @@ export class OPFS implements FileSystemAPI {
 		return OPFS._rootHandle
 	}
 	private sanitizeFilePath(path: string): string {
-		let sanitazied = path
+		let sanitized = path
 			// .replace(/\[/g, '__LSB__')
 			// .replace(/\]/g, '__RSB__')
 			.trim()
 
-		if (sanitazied.startsWith('/')) {
-			sanitazied = sanitazied.substring(1)
+		if (sanitized.startsWith('/')) {
+			sanitized = sanitized.substring(1)
 		}
-		if (!sanitazied.startsWith('root/') && !(sanitazied === 'root')) {
-			// sanitazied = sanitazied.substring('root/'.length)
-			sanitazied = 'root/' + sanitazied
+		if (
+			!sanitized.startsWith('root/') &&
+			!(sanitized === 'root') &&
+			sanitized
+		) {
+			// sanitized = sanitized.substring('root/'.length)
+			sanitized = 'root/' + sanitized
 		}
-		return sanitazied
+		return sanitized
 	}
 	private async navigateToParentHandle(
 		path: string,
@@ -138,9 +187,11 @@ export class OPFS implements FileSystemAPI {
 
 		const parts = path.split('/').filter(part => part)
 		const itemName = parts.pop()!
-
 		if (itemName === undefined) {
-			throw new Error(`Invalid path: ${path}`)
+			return {
+				parentHandle: this.rootHandle,
+				itemName: this.NO_NAME_PLACEHOLDER
+			}
 		}
 
 		let currentHandle = this.rootHandle
@@ -149,9 +200,13 @@ export class OPFS implements FileSystemAPI {
 			if (part === 'root') {
 				continue
 			}
-			currentHandle = await currentHandle.getDirectoryHandle(part, {
-				create: options?.create
-			})
+			try {
+				currentHandle = await currentHandle.getDirectoryHandle(part, {
+					create: options?.create
+				})
+			} catch (e) {
+				console.info('navigateToParentHandle error', e)
+			}
 		}
 
 		return { parentHandle: currentHandle, itemName }
@@ -159,7 +214,7 @@ export class OPFS implements FileSystemAPI {
 
 	private async getHandle(path: string): Promise<FileSystemHandle> {
 		path = this.sanitizeFilePath(path)
-		if (path === 'root' || path === '/') {
+		if (path === '/') {
 			return this.rootHandle
 		}
 
@@ -185,20 +240,27 @@ export class OPFS implements FileSystemAPI {
 			.split('/')
 			.filter(part => part)
 		let currentHandle = this.rootHandle
-		for (const part of parts) {
+
+		if (parts.length === 0) {
+			return await currentHandle.getDirectoryHandle(this.NO_NAME_PLACEHOLDER, {
+				create: options?.create
+			})
+		}
+
+		for (let i = 0; i < parts.length; i++) {
+			const part = parts[i]
 			try {
-				if (part === 'root') {
-					continue
-				}
+				if (i === 0 && part === 'root') continue
 				currentHandle = await currentHandle.getDirectoryHandle(part, {
 					create: options?.create
 				})
 			} catch (e) {
-				console.log(part)
-				console.log(e)
+				console.info(
+					'getDirectoryHandle error',
+					e instanceof Error ? e.message : e
+				)
 			}
 		}
-
 		return currentHandle
 	}
 
@@ -213,6 +275,7 @@ export class OPFS implements FileSystemAPI {
 			throw error
 		}
 	}
+
 	async read(path: string, options?: { signal?: AbortSignal }): Promise<File> {
 		path = this.sanitizeFilePath(path)
 		if (path === 'root' || path === '/') {
@@ -247,7 +310,7 @@ export class OPFS implements FileSystemAPI {
 		try {
 			for await (const chunk of this.chunker(file, CHUNK_SIZE)) {
 				if (options?.signal?.aborted) {
-					console.log('Aborted', options?.signal?.aborted)
+					console.error('Aborted', options?.signal?.aborted)
 					throw new DOMException('The operation was aborted.', 'AbortError')
 				}
 
@@ -276,13 +339,23 @@ export class OPFS implements FileSystemAPI {
 		const fileHandle = await parentHandle.getFileHandle(itemName, {
 			create: true
 		})
+
 		const writable = await fileHandle.createWritable()
 
+		await writable.truncate(0)
 		if (!options) {
 			if (typeof content === 'string') {
 				await writable.write(content)
+			} else if (content instanceof ArrayBuffer) {
+				await writable.write(new Uint8Array(content))
 			} else {
-				await writable.write(new Uint8Array(content as ArrayBuffer))
+				const reader = new FileReader()
+				await new Promise<void>((resolve, reject) => {
+					reader.onload = () => resolve()
+					reader.onerror = () => reject(reader.error)
+					reader.readAsArrayBuffer(content)
+				})
+				await writable.write(new Uint8Array(reader.result as ArrayBuffer))
 			}
 			await writable.close()
 
@@ -335,28 +408,40 @@ export class OPFS implements FileSystemAPI {
 		if (sourceHandle.kind !== 'file') {
 			throw new Error(`Source is not a file: ${source}`)
 		}
-		const destinationExists = await this.exists(dest)
-		if (!destinationExists) {
-			throw new Error(`Destination '${dest}' does not exist.`)
-		}
+		// const destinationExists = await this.exists(dest)
+		// if (!destinationExists) {
+		// 	throw new Error(`Destination '${dest}' not exist.`)
+		// }
 
-		// sourceHandle.name
-		const list = await this.list(dest)
-		if (list.map(l => l.name).includes(sourceHandle.name)) {
-			throw new Error(
-				`Destination '${dest}' already contains a file with the same name.`
-			)
-		}
+		// // sourceHandle.name
+		// const list = await this.list(dest)
+		// if (list.map(l => l.name).includes(sourceHandle.name)) {
+		// 	throw new Error(
+		// 		`Destination '${dest}' already contains a file with the same name.`
+		// 	)
+		// }
 
 		const name = '/' + sourceHandle.name
 		const content = await this.read(source)
+		await this.createFile(dest + name)
 		await this.write(dest + name, await content.arrayBuffer())
 		await this.delete(source, { recursive: true })
 
 		await this.triggerWatchEvent('delete', source)
 		await this.triggerWatchEvent('add', dest)
 	}
-
+	async rename(path: string, name: string) {
+		const idDir = await this.isDirectory(path)
+		const { parentHandle, itemName } = await this.navigateToParentHandle(path)
+		console.log("let's fking GO", parentHandle, itemName)
+		await parentHandle.removeEntry(itemName)
+		console.log('removed entry', 'isDir?', idDir)
+		idDir
+			? await parentHandle.getDirectoryHandle(name, { create: true })
+			: await parentHandle.getFileHandle(name, { create: true })
+		console.log('created new entry')
+		await this.triggerWatchEvent('update', path)
+	}
 	async moveDirectory(
 		source: string,
 		dest: string,
@@ -368,7 +453,8 @@ export class OPFS implements FileSystemAPI {
 		if (sourceHandle.kind !== 'directory') {
 			throw new Error(`Source is not a directory: ${source}`)
 		}
-
+		const name = '/' + sourceHandle.name
+		dest = dest + name
 		const destinationExists = await this.exists(dest)
 		if (destinationExists && !options?.overwrite) {
 			throw new Error(`Destination '${dest}' already exists.`)
@@ -377,16 +463,22 @@ export class OPFS implements FileSystemAPI {
 		if (destinationExists && options?.overwrite) {
 			await this.delete(dest, { recursive: true })
 		}
-
 		await this.copyDirectory(source, dest)
 		await this.delete(source, { recursive: true })
-
 		await this.triggerWatchEvent('delete', source)
 		await this.triggerWatchEvent('add', dest)
 	}
-
+	async isDirectory(path: string) {
+		return await this.getHandle(path).then(
+			handle => handle.kind === 'directory'
+		)
+	}
 	async getNodeRepresentation(dirPath: string): Promise<Folder[]> {
 		dirPath = this.sanitizeFilePath(dirPath)
+		if (dirPath === '') {
+			dirPath = 'root/' + this.NO_NAME_PLACEHOLDER
+		}
+
 		if (dirPath === 'root' || dirPath === '/' || dirPath === '/root') {
 			const handle = this.rootHandle
 
@@ -402,8 +494,7 @@ export class OPFS implements FileSystemAPI {
 			}
 			return [nodeRepresentation] as Folder[]
 		}
-
-		const handle = await this.getHandle(dirPath)
+		const handle = await this.getHandle(dirPath || this.NO_NAME_PLACEHOLDER)
 		const pathArray = dirPath.split('/')
 		const name = pathArray.pop()
 		if (!name) {
@@ -440,7 +531,7 @@ export class OPFS implements FileSystemAPI {
 
 			await this.triggerWatchEvent('delete', path)
 		} catch (e) {
-			console.log('delete error', itemName, e)
+			console.error('delete error', itemName, e)
 		}
 	}
 
@@ -461,7 +552,7 @@ export class OPFS implements FileSystemAPI {
 							path: entryPath,
 							type: 'file',
 							handle: handle as FileSystemFileHandle,
-							extension: name.split('.').pop() as Extention
+							extension: name.split('.').pop() as Extension
 						})
 					: entries.push({
 							name,
@@ -474,7 +565,7 @@ export class OPFS implements FileSystemAPI {
 
 			return entries
 		} catch (e) {
-			console.log(e)
+			console.error(e)
 			return []
 		}
 	}
@@ -521,7 +612,6 @@ export class OPFS implements FileSystemAPI {
 		const { parentHandle, itemName } = await this.navigateToParentHandle(path, {
 			create: options?.recursiveDirs
 		})
-
 		const exists = await this.exists(path)
 		if (exists && !options?.overwrite) {
 			throw new Error(`File already exists at path: ${path}`)
@@ -544,6 +634,7 @@ export class OPFS implements FileSystemAPI {
 
 		return file
 	}
+
 	async createDirectory(
 		path: string,
 		options?: CreateDirectoryOptions
@@ -565,6 +656,7 @@ export class OPFS implements FileSystemAPI {
 
 		return this.getNodeRepresentation(path)
 	}
+
 	async *chunker(
 		file: File | Blob,
 		chunkSize: number | ((offset: number, fileSize: number) => number)
@@ -591,18 +683,45 @@ export class OPFS implements FileSystemAPI {
 
 				await this.triggerWatchEvent('delete', entryPath)
 			} catch (e) {
-				console.log('Error deleting', entryPath, e)
+				console.error('Error deleting', entryPath, e)
 			}
 		}
 	}
 	async info(path: string): Promise<FileSystemInfo> {
 		const handle = await this.getHandle(path)
+		const now = Date.now()
+		if (handle.kind === 'directory') {
+			return {
+				type: handle.kind,
+				name: handle.name,
+				mode: 0o755,
+				nlink: 1,
+				uid: 0,
+				gid: 0,
+				atimeMs: now,
+				mtimeMs: now,
+				ctimeMs: now,
+				birthtimeMs: now
+			}
+		}
+		// const stats = await handle.
+		const file = await this.read(path)
 		return {
 			type: handle.kind,
-			name: handle.name
+			name: handle.name,
+			size: file.size,
+			mode: 0o755,
+			nlink: 1,
+			uid: 0,
+			gid: 0,
+			atimeMs: now,
+			mtimeMs: now,
+			ctimeMs: now,
+			birthtimeMs: now
 		}
-		// return handle.queryPermission()
 	}
+	// return handle.queryPermission()
+
 	private async copyDirectory(source: string, destination: string) {
 		const sourceHandle = await this.getDirectoryHandle(source)
 		await this.createDirectory(destination, { recursive: true })
@@ -636,5 +755,89 @@ export class OPFS implements FileSystemAPI {
 	private chunk(file: File | Blob, offset: number, chunkSize: number) {
 		const end = Math.min(offset + chunkSize, file.size)
 		return file.slice(offset, end)
+	}
+}
+
+class FileSystemWrapper implements NodeAPI {
+	private fileSystemAPI: FileSystemAPI
+
+	constructor(fileSystemAPI: FileSystemAPI) {
+		this.fileSystemAPI = fileSystemAPI
+	}
+
+	async readFile(path: string, options?: any): Promise<string | Buffer> {
+		const file = await this.fileSystemAPI.read(path)
+		return file instanceof ArrayBuffer ? Buffer.from(file) : file.toString()
+	}
+
+	async writeFile(
+		file: string,
+		data: string | Buffer,
+		options?: any
+	): Promise<void> {
+		const content = Buffer.isBuffer(data) ? data.toString() : data
+		await this.fileSystemAPI.write(file, content)
+	}
+
+	async unlink(path: string): Promise<void> {
+		await this.fileSystemAPI.delete(path)
+	}
+
+	async readdir(path: string, options?: any): Promise<string[]> {
+		const nodes = await this.fileSystemAPI.list(path)
+		return nodes.map(node => node.name)
+	}
+
+	async mkdir(path: string, options?: any): Promise<void> {
+		await this.fileSystemAPI.createDirectory(path)
+	}
+
+	async rmdir(path: string): Promise<void> {
+		await this.fileSystemAPI.delete(path, { recursive: true })
+	}
+
+	async stat(path: string): Promise<FileSystemStats> {
+		const fileInfo = await this.fileSystemAPI.info(path)
+
+		return {
+			dev: 0,
+			ino: 0,
+			mode: fileInfo.mode,
+			nlink: fileInfo.nlink,
+			uid: fileInfo.uid,
+			gid: fileInfo.gid,
+			rdev: 0,
+			size: fileInfo?.size ?? 0,
+			blksize: 4096,
+			blocks: Math.ceil((fileInfo?.size ?? 4096) / 4096),
+			atimeMs: fileInfo.atimeMs,
+			mtimeMs: fileInfo.mtimeMs,
+			ctimeMs: fileInfo.ctimeMs,
+			birthtimeMs: fileInfo.birthtimeMs,
+			atime: new Date(fileInfo.atimeMs),
+			mtime: new Date(fileInfo.mtimeMs),
+			ctime: new Date(fileInfo.ctimeMs),
+			birthtime: new Date(fileInfo.birthtimeMs)
+		}
+	}
+
+	async lstat(path: string): Promise<FileSystemStats> {
+		return this.stat(path)
+	}
+
+	// Optional methods for symlink, readlink, and chmod
+	async symlink(target: string, path: string, type?: string): Promise<void> {
+		// Implement symlink logic based on your FileSystemAPI if supported
+		throw new Error('symlink not implemented in FileSystemAPI')
+	}
+
+	async readlink(path: string): Promise<string> {
+		// Implement readlink logic if your FileSystemAPI supports symbolic links
+		throw new Error('readlink not implemented in FileSystemAPI')
+	}
+
+	async chmod(path: string, mode: string | number): Promise<void> {
+		// Implement chmod logic if supported
+		throw new Error('chmod not implemented in FileSystemAPI')
 	}
 }

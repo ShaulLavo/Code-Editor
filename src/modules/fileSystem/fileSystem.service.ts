@@ -1,6 +1,6 @@
 import { ReactiveMap } from '@solid-primitives/map'
 import { DemoNode } from '~/constants/demo/nodes'
-import { Formmater, getConfigFromExt } from '~/format'
+import { Formatter, getConfigFromExt } from '~/format'
 import { Document, Folder, OPFS } from '~/FS/OPFS'
 
 export type Node = (Folder | Document) & { isOpen?: boolean }
@@ -72,7 +72,40 @@ export function findNode(path: string, structure: Node[]): Node | undefined {
 
 	return search(structure)
 }
+export function getFirstDirectory(
+	path: string,
+	structure: Node[]
+): Folder | undefined {
+	const parts = path.split('/').filter(Boolean)
 
+	function searchForDirectory(
+		nodes: Node[] | undefined,
+		index = 0,
+		parent: Node | undefined = undefined
+	): Folder | undefined {
+		if (!nodes || nodes.length === 0) return undefined
+
+		for (const node of nodes) {
+			if (node.name === parts[index]) {
+				if (index === parts.length - 1) {
+					if (isFolder(node)) {
+						return node
+					} else {
+						return parent as Folder | undefined
+					}
+				}
+
+				if (isFolder(node) && node.children?.length) {
+					return searchForDirectory(node.children, index + 1, node)
+				}
+			}
+		}
+
+		return undefined
+	}
+
+	return searchForDirectory(structure)
+}
 export function moveNode(
 	structure: Node[],
 	fromPath: string,
@@ -193,13 +226,12 @@ export const loadTabData = async (
 	}
 	const file = await fileSystem.read(tabKey)
 	const tabs = JSON.parse(await file.text())
-
 	const readPromises = tabs.map(async (tab: string) => {
 		const file = await fileSystem.read(tab)
 		const ext = tab.split('.').pop()
 		fileMap.set(
 			tab,
-			await Formmater.prettier(
+			await Formatter.prettier(
 				(await file?.text()) ?? '',
 				getConfigFromExt(ext)
 			)

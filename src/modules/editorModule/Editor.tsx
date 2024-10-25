@@ -26,28 +26,18 @@ import {
 	tsLinterWorker,
 	tsSyncWorker
 } from '@valtown/codemirror-ts'
-import {
-	Accessor,
-	For,
-	Resource,
-	Setter,
-	batch,
-	createEffect,
-	createSignal,
-	onMount
-} from 'solid-js'
-import { extensionMap, formatCode } from '~/format'
+import { Accessor, batch, createEffect, createSignal, onMount } from 'solid-js'
+import { extensionMap, formatCode, setFormatter } from '~/format'
 import { createEditorControlledValue } from '~/hooks/controlledValue'
 import { createCompartmentExtension } from '~/hooks/createCompartmentExtension'
 import {
 	editorHight,
-	editorRef,
+	editorRefs,
 	isMiniMap,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
 	setEditorHight,
-	setEditorRef,
 	setIsTsLoading,
 	showLineNumber
 } from '~/stores/editorStore'
@@ -61,49 +51,68 @@ import {
 
 import { NullableSize } from '@solid-primitives/resize-observer'
 
-import { createInnerZoom } from '~/hooks/createInnerZoom'
+// import { createInnerZoom } from '~/hooks/createInnerZoom'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
-import { useEditorFS } from '~/context/FsContext'
+import { useFs } from '~/context/FsContext'
+import { createInnerZoom } from '~/hooks/createInnerZoom'
+import { autoHide } from '~/lib/dom'
+import { createKeymap } from '~/lib/keymap'
 import { worker } from '~/modules/main/Main'
-import { autoHide } from '~/utils/dom'
-import { createKeymap } from '~/utils/keymap'
+import { setCurrentEditorIndex } from '~/stores/appStateStore'
 import { EditorNav } from './EditorNav'
-
+import { viewTransition } from '~/hooks/viewTransition'
+import { run } from 'node:test'
+import { python } from '@codemirror/lang-python'
+import { json } from '@codemirror/lang-json'
+import { create } from 'domain'
 export interface EditorProps {
-	code:
-		| Accessor<string>
-		| Resource<string | undefined>
-		| (() => string | undefined)
-	setCode: Setter<string | undefined>
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
 	size: Readonly<NullableSize>
 	isWorkerReady: Accessor<boolean>
+	index: number
+	extraKeyBindings?: Record<string, () => boolean>
 }
 
 export const Editor = ({
-	code,
-	setCode,
 	defaultTheme,
 	formatOnMount,
 	size,
-	isWorkerReady
+	isWorkerReady,
+	index,
+	extraKeyBindings
 }: EditorProps) => {
-	const editorFS = useEditorFS()
-	const { currentPath, prettierConfig, currentExtension, isTs, filePath } =
-		editorFS
-	// useShortcuts(code, setCode, currentExtension)
+	const editorFS = useFs('editor-' + index)
+
+	const {
+		currentPath,
+		prettierConfig,
+		currentExtension,
+		isTs,
+		isPython,
+		isJSON,
+		filePath,
+		code,
+		setCode
+	} = editorFS
 
 	const { fontSize } = createInnerZoom({
-		ref: editorRef,
+		ref: () => editorRefs[index],
 		key: 'editor'
 	})
 	const [editorView, setView] = createSignal<EditorView>(null!)
 	const start = performance.now()
-	// editorView().state.toJSON({foldState})
 	const setupEditor = () => {
-		const defaultKeymap = createKeymap(editorFS)
+		const KeyBindings = Object.entries(extraKeyBindings ?? {}).map(
+			([key, fn]) => ({
+				key,
+				run: fn,
+				preventDefault: true
+			})
+		)
+		console.log(KeyBindings)
+		const defaultKeymap = createKeymap(editorFS, KeyBindings)
 		const createColorCycler = () => {
 			const colors = Object.values(bracketColors())
 			let index = 0
@@ -114,7 +123,13 @@ export const Editor = ({
 				return color
 			}
 		}
-
+		const focusExtension = EditorView.focusChangeEffect.of((state, focus) => {
+			if (focus) {
+				viewTransition(() => setCurrentEditorIndex(index))
+				// setCurrentEditorIndex(index)
+			}
+			return null
+		})
 		const getBracketColor = createColorCycler()
 		const baseExtensions = [
 			highlightSpecialChars(),
@@ -127,9 +142,7 @@ export const Editor = ({
 			rectangularSelection(),
 			highlightActiveLine(),
 			highlightSelectionMatches(),
-			// EditorView.lineWrapping,
 			keymap.of(defaultKeymap),
-			javascript({ jsx: true, typescript: true }),
 			bracketMatching(),
 			rainbowBrackets(),
 			highlightActiveLineGutter(),
@@ -142,16 +155,17 @@ export const Editor = ({
 					activeLight: getBracketColor(),
 					activeDark: getBracketColor()
 				}
-			})
+			}),
+			focusExtension
 		] as Extension[]
+
 		const editorState = EditorState.create({
 			doc: code(),
 			extensions: baseExtensions
-			// extensions: baseExtensions
 		})
 
 		const view = new EditorView({
-			parent: editorRef(),
+			parent: editorRefs[index],
 			dispatch: (transaction, view) => {
 				view.update([transaction])
 
@@ -161,38 +175,40 @@ export const Editor = ({
 					const { main } = selection
 
 					const line = doc.lineAt(main.head)
-					// lastLine.number
-					// const lineContents = view.state.sliceDoc(line.from, line.to)
 					const selectionText = state.sliceDoc(main.from, main.to)
 					setCurrentSelection(selectionText)
 					setCurrentLine(line.number)
 					setCurrentColumn(main.head - line.from)
 					setEditorHight(Math.max(doc.lines * 13, 13))
-					// if (doc.eq(view.state.doc)) return //??
 					setCode(doc.toString())
 				})
 			}
 		})
 		view.setState(editorState)
 		setView(view)
-		console.info(
-			`time to first paint: ${performance.now() - start} milliseconds`
-		)
 
 		formatOnMount?.() && formatCode(prettierConfig(), code, setCode)
 		defaultTheme && setTheme(defaultTheme)
 
+		console.info(
+			`time to first paint: ${performance.now() - start} milliseconds`
+		)
 		return view
 	}
 
-	const createExtention = (extention: Accessor<Extension>) =>
-		createCompartmentExtension(extention, editorView)
+	const createExtension = (extension: Accessor<Extension>) =>
+		createCompartmentExtension(extension, editorView)
 
 	createEditorControlledValue(editorView, code)
-	createExtention(() => (showLineNumber?.() ? lineNumbers() : []))
-	createExtention(currentTheme)
-	createExtention(foldGutter)
-	createExtention(() =>
+	createExtension(() =>
+		isTs() ? javascript({ jsx: true, typescript: true }) : []
+	)
+	createExtension(() => (isPython() ? python() : []))
+	createExtension(() => (isJSON() ? json() : []))
+	createExtension(() => (showLineNumber?.() ? lineNumbers() : []))
+	createExtension(currentTheme)
+	createExtension(foldGutter)
+	createExtension(() =>
 		showMinimap.compute([], () => {
 			return isMiniMap()
 				? {
@@ -207,8 +223,8 @@ export const Editor = ({
 				: null
 		})
 	)
-	createExtention(() => {
-		if (!isWorkerReady() || !worker || !isTs() || !filePath()) return []
+	createExtension(() => {
+		if (!isTs() || !isWorkerReady() || !worker || !filePath()) return []
 
 		const tsExtensions = [
 			tsFacetWorker.of({ worker, path: filePath()! }),
@@ -218,7 +234,7 @@ export const Editor = ({
 		]
 		return tsExtensions
 	})
-	createExtention(() =>
+	createExtension(() =>
 		EditorView.theme({
 			'.cm-content': {
 				fontSize: fontSize() + 'pt'
@@ -229,7 +245,10 @@ export const Editor = ({
 			}
 		})
 	)
-
+	createEffect(() => {
+		if (isTs()) setFormatter('prettier')
+		if (isPython()) setFormatter('python')
+	})
 	createEffect(() => {
 		//@ts-ignore
 		if (extensionMap[currentExtension()] === 'typescript') {
@@ -243,14 +262,14 @@ export const Editor = ({
 
 	return (
 		<>
-			<EditorNav />
+			<EditorNav index={index} />
 			<div
-				id="editor"
+				// id="editor"
 				class="w-full"
 				style={{
 					height: (size.height ?? editorHight()) - 40 + 'px'
 				}}
-				ref={ref => setEditorRef(ref)}
+				ref={ref => editorRefs.push(ref)}
 			/>
 		</>
 	)

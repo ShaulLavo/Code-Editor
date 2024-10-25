@@ -11,7 +11,7 @@ export const defaultSettingsXcodeLight: CreateThemeOptions['settings'] = {
 	selectionMatch: '#BBDFFF',
 	gutterBackground: '#fff',
 	gutterForeground: '#AFAFAF',
-	lineHighlight: '#d5e6ff69'
+	lineHighlight: '#d5e6ff4c'
 }
 
 export const xcodeLightStyle: CreateThemeOptions['styles'] = [

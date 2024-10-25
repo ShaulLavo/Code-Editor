@@ -1,7 +1,12 @@
 import { createSignal } from 'solid-js'
-import { all } from '../constants/samples'
 
-export const [editorRef, setEditorRef] = createSignal<HTMLDivElement>(null!)
+export const editorRefs: HTMLDivElement[] = []
+export const removeEditorRef = (ref: HTMLDivElement) => {
+	const index = editorRefs.indexOf(ref)
+	if (index > -1) {
+		editorRefs.splice(index, 1)
+	}
+}
 export const [showLineNumber, setShowLineNumber] = createSignal(true)
 export const [currentLine, setCurrentLine] = createSignal(0)
 export const [currentColumn, setCurrentColumn] = createSignal(0)

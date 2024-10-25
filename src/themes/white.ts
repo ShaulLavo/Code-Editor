@@ -34,7 +34,7 @@ export const cd = {
 	cursor: '#7d46fc',
 	dropdownBackground: '#0a0b0f',
 	dropdownBorder: '#1e1d27',
-	activeLine: '#00346eb0',
+	activeLine: '#00346e4c',
 	matchingBracket: '#7d46fc7f',
 	keyword: null,
 	storage: null,

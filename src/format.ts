@@ -1,15 +1,18 @@
+import { BuiltInParserName, Options } from 'prettier'
+import babel from 'prettier/plugins/babel.js'
 import prettierPluginEstree from 'prettier/plugins/estree'
 import prettierPluginTypescript from 'prettier/plugins/typescript'
 import { format as prettier } from 'prettier/standalone'
-import babel from 'prettier/plugins/babel.js'
-import prettierPluginJson from 'prettier-plugin-json-formats'
-import { js_beautify } from 'js-beautify'
-import { Accessor, createSignal, Resource, Setter, useContext } from 'solid-js'
-import { BuiltInParserName, Options } from 'prettier'
-import ts from 'typescript'
-import { useEditorFS } from './context/FsContext'
+import { Accessor, createSignal, Resource, Setter } from 'solid-js'
+import init, { format } from '@wasm-fmt/ruff_fmt/vite'
 
-const deafultConfig = {
+try {
+	await init()
+} catch (e) {
+	console.log(e)
+}
+
+const defaultConfig = {
 	typescript: {
 		parser: 'typescript',
 		plugins: [prettierPluginTypescript, prettierPluginEstree],
@@ -27,30 +30,59 @@ const deafultConfig = {
 	json: {
 		parser: 'json',
 		plugins: [babel, prettierPluginEstree]
-	}
-} satisfies Partial<Record<BuiltInParserName, Options>>
+	},
+	javascript: {
+		parser: 'typescript',
+		allowJs: true,
+		plugins: [prettierPluginTypescript, prettierPluginEstree]
+	},
+	python: {}
+} satisfies Partial<
+	Record<BuiltInParserName | 'python' | 'javascript', Options>
+>
 
 export const extensionMap = {
 	ts: 'typescript',
 	tsx: 'typescript',
-	js: 'typescript',
+	dts: 'typescript', // TypeScript declaration file
+	js: 'javascript',
+	mjs: 'javascript', // ES6 module in JavaScript
+	cjs: 'javascript', // CommonJS module in JavaScript
+	jsx: 'javascript',
 	json: 'json',
-	jsx: 'typescript'
+	jsonc: 'json', // JSON with comments
+	json5: 'json', // JSON5 format
+	geojson: 'json', // GeoJSON format
+	topojson: 'json', // TopoJSON format,
+	py: 'python',
+	pyc: 'python',
+	pyd: 'python',
+	pyo: 'python',
+	pyw: 'python',
+	pyz: 'python',
+	pyx: 'python'
 } as const
 
 export const getConfigFromExt = (extension?: string) => {
 	const parser = extensionMap[extension as keyof typeof extensionMap]
 
-	return deafultConfig[parser]
+	return defaultConfig[parser]
 }
 
-export const Formmater = {
+export const Formatter = {
 	async prettier(code: string, config: Options) {
 		try {
 			if (!code || !config) return code
 			return await prettier(code, config)
 		} catch (e) {
-			// console.log(e)
+			return code
+		}
+	},
+	python(code: string) {
+		try {
+			if (!code) return code
+			return format(code)
+		} catch (e) {
 			return code
 		}
 	}
@@ -59,14 +91,14 @@ export const Formmater = {
 	// }
 }
 
-export const [formmaterName, setFormmater] =
-	createSignal<keyof typeof Formmater>('prettier')
-export const formatter = () => Formmater[formmaterName()]
+export const [formatterName, setFormatter] =
+	createSignal<keyof typeof Formatter>('prettier')
+export const formatter = () => Formatter[formatterName()]
 
 export const formatCode = async (
 	config: Options,
 	code: Accessor<string | undefined> | Resource<string | undefined>,
-	setCode: Setter<string | undefined>
+	setCode: (code: string | undefined) => void
 ) => {
 	const formatted = await formatter()(code()!, config)
 	setCode(formatted)

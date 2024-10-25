@@ -10,7 +10,7 @@ export const defaultSettingsMojo: CreateThemeOptions['settings'] = {
 	gutterBackground: '#1E1E1E', // editor.lineHighlightBackground
 	gutterForeground: '#444', // editorLineNumber.foreground
 	gutterBorder: 'transparent', // editorGroup.border (not explicitly set)
-	lineHighlight: '#292929' // editorRuler.foreground (approximation)
+	lineHighlight: '#2929294c' // editorRuler.foreground (approximation)
 }
 
 export const mojoStyle: CreateThemeOptions['styles'] = [
@@ -60,7 +60,7 @@ export const xTermMojoTheme = {
 	foreground: '#A6A6A6', // activityBar.foreground
 	background: '#1E1E1E', // editorPane.background
 	cursor: '#007ACC', // editor.selectionBackground (used as caret)
-	cursorAccent: '#1E1E1E', // editor.lineHighlightBackground
+	cursorAccent: '#1E1E1E4C', // editor.lineHighlightBackground
 	selectionBackground: '#007ACC', // editor.selectionBackground
 	selectionForeground: '#A6A6A6', // activityBar.foreground
 	selectionInactiveBackground: '#ADD6FF', // editor.selectionHighlightBackground

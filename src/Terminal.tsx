@@ -2,37 +2,28 @@ import { ClipboardAddon } from '@xterm/addon-clipboard'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
 import { ITheme, Terminal as Xterm } from '@xterm/xterm'
-import { Buffer } from 'buffer'
-import git from 'isomorphic-git'
+import git, { PromiseFsClient } from 'isomorphic-git'
 import http from 'isomorphic-git/http/web'
 import minimist from 'minimist'
-import {
-	createEffect,
-	createResource,
-	createSignal,
-	onMount,
-	Resource,
-	type Component
-} from 'solid-js'
+import { createEffect, createSignal, onMount, type Component } from 'solid-js'
 import { Readline } from 'xterm-readline'
 import { xTermTheme } from './stores/themeStore'
 import './xterm.css'
-  
+
 import { NullableSize } from '@solid-primitives/resize-observer'
 
-import { useTerminalFS } from './context/FsContext'
 import { createInnerZoom } from './hooks/createInnerZoom'
+import { currentTerminalFs } from './stores/appStateStore'
+import { ReadLine } from 'readline'
 
 interface XtermProps {
 	size: Readonly<NullableSize>
 }
 
 export const Terminal: Component<XtermProps> = props => {
-	const { setCurrentPath, currentPath, fs } = useTerminalFS()
+	const { setCurrentPath, currentPath, fs } = currentTerminalFs()
 
-
-
-	async function cd(filesystem: any, path: string): Promise<void> {
+	async function cd(filesystem: typeof fs, path: string): Promise<void> {
 		let newPath: string
 
 		if (path === '.') {
@@ -59,39 +50,40 @@ export const Terminal: Component<XtermProps> = props => {
 			newPath = resolvePath(newPath)
 		}
 
-		if (await filesystem.isDirectory(newPath)) {
+		if (await filesystem()?.exists(newPath)) {
 			setCurrentPath(newPath)
 		} else {
-			throw new Error(`cd: ${path}: No such directory`)
+			// throw new Error(`cd: ${path}: No such directory`)
 		}
 	}
 	async function ls(path: string = currentPath()): Promise<string> {
 		const directoryContents = await fs()?.list(resolvePath(path))
 
-		const filesAndDirectories = [
-			...directoryContents.directories.map(dir => `${dir.name}/`),
-			...directoryContents.files.map(file => file.name)
-		]
+		// const filesAndDirectories = [
+		// 	...directoryContents.directories.map(dir => `${dir.name}/`),
+		// 	...directoryContents.files.map(file => file.name)
+		// ]
 
-		const maxLength = Math.max(
-			...filesAndDirectories.map(item => item.length),
-			0
-		)
+		// const maxLength = Math.max(
+		// 	...filesAndDirectories.map(item => item.length),
+		// 	0
+		// )
 
-		const terminalWidth = 80
-		const columnWidth = maxLength + 2
-		const numColumns = Math.floor(terminalWidth / columnWidth)
+		// const terminalWidth = 80
+		// const columnWidth = maxLength + 2
+		// const numColumns = Math.floor(terminalWidth / columnWidth)
 
-		// Format the output
-		let formattedOutput = ''
-		filesAndDirectories.forEach((item, index) => {
-			formattedOutput += item.padEnd(columnWidth)
-			if ((index + 1) % numColumns === 0) {
-				formattedOutput += '\n'
-			}
-		})
+		// // Format the output
+		// let formattedOutput = ''
+		// filesAndDirectories.forEach((item, index) => {
+		// 	formattedOutput += item.padEnd(columnWidth)
+		// 	if ((index + 1) % numColumns === 0) {
+		// 		formattedOutput += '\n'
+		// 	}
+		// })
 
-		return formattedOutput.trimEnd()
+		// return formattedOutput.trimEnd()
+		return ''
 	}
 
 	function pwd(): string {
@@ -110,9 +102,9 @@ export const Terminal: Component<XtermProps> = props => {
 
 	async function rm(filesystem: any, path: string): Promise<void> {
 		const fullPath = resolvePath(path)
-		if (await filesystem.isDirectory(fullPath)) {
+		if (await filesystem?.isDirectory(fullPath)) {
 			await filesystem.removeDirectory(fullPath)
-		} else if (await filesystem.isFile(fullPath)) {
+		} else if (await filesystem?.isFile(fullPath)) {
 			await filesystem.removeFile(fullPath)
 		} else {
 			throw new Error(`rm: ${path}: No such file or directory`)
@@ -122,7 +114,7 @@ export const Terminal: Component<XtermProps> = props => {
 	async function mv(source: string, destination: string): Promise<void> {
 		const sourcePath = resolvePath(source)
 		const destinationPath = resolvePath(destination)
-		await fs.moveFile(sourcePath, destinationPath)
+		await fs()?.moveFile(sourcePath, destinationPath)
 	}
 
 	async function cp(source: string, destination: string): Promise<void> {
@@ -144,7 +136,7 @@ export const Terminal: Component<XtermProps> = props => {
 		return path
 	}
 
-	async function typeEffect(rl: any, text: string, delay: number = 100) {
+	async function typeEffect(rl: Readline, text: string, delay: number = 100) {
 		for (let i = 0; i < text.length; i++) {
 			rl.write(text.charAt(i))
 			const randomDelay = delay + Math.floor(Math.random() * 50 - 25) // Adding randomness to the delay
@@ -152,11 +144,94 @@ export const Terminal: Component<XtermProps> = props => {
 		}
 		rl.write('\r\n')
 	}
-	async function clone(gitFs: Resource<any>) {
-		if (gitFs.loading) return
+	async function loadingAnimation(
+		rl: Readline,
+		stopPromise: Promise<void>,
+		delay: number = 300,
+		type: string = 'arrow'
+	) {
+		const loadingStages = getLoadingStages(type)
+		let stop = false
+
+		stopPromise.then(() => (stop = true))
+
+		while (!stop) {
+			for (const stage of loadingStages) {
+				if (stop) break
+				rl.write('\x1b[2K\r')
+				rl.write(`\r${stage}`)
+				await new Promise(resolve => setTimeout(resolve, delay))
+			}
+		}
+		rl.write('\x1b[2K\r')
+	}
+
+	function getLoadingStages(type: string): string[] {
+		switch (type) {
+			case 'dots':
+				return ['.', '..', '...']
+			case 'spinner':
+				return ['|', '/', '-', '\\']
+			case 'arrow':
+				return ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙']
+			default:
+				return ['.', '..', '...']
+		}
+	}
+	function createSnakeSquareAnimation(size: number): string[] {
+		const stages: string[] = []
+		const grid = Array.from({ length: size }, () => Array(size).fill(' '))
+
+		// Movement pattern (right, down, left, up)
+		const moves = [
+			[0, 1],
+			[1, 0],
+			[0, -1],
+			[-1, 0]
+		]
+
+		let x = 0,
+			y = 0,
+			moveIndex = 0
+
+		for (let i = 0; i < size * size; i++) {
+			grid[x][y] = 'O'
+			stages.push(grid.map(row => row.join(' ')).join('\n'))
+			grid[x][y] = ' '
+			let [dx, dy] = moves[moveIndex]
+
+			// Calculate the next move
+			if (
+				x + dx >= size ||
+				y + dy >= size ||
+				x + dx < 0 ||
+				y + dy < 0 ||
+				grid[x + dx][y + dy] !== ' '
+			) {
+				moveIndex = (moveIndex + 1) % 4 // Change direction
+				;[dx, dy] = moves[moveIndex]
+			}
+
+			x += dx
+			y += dy
+		}
+
+		return stages
+	}
+	async function init() {
+		await git.init({ fs: { promises: fs()?.NodeAPI! }, dir: 'root' })
+	}
+
+	const [ref, setRef] = createSignal<HTMLDivElement>(null!)
+	const term = new Xterm({
+		cursorBlink: true,
+		allowProposedApi: true,
+		convertEol: true
+	})
+	async function clone(gitFs: PromiseFsClient) {
 		try {
 			await git.clone({
-				fs: gitFs()!,
+				fs: gitFs,
 				http,
 				dir: '/',
 				corsProxy: 'https://cors.isomorphic-git.org',
@@ -169,28 +244,6 @@ export const Terminal: Component<XtermProps> = props => {
 			console.error(e)
 		}
 	}
-	async function log(gitFs: Resource<any>) {
-		if (gitFs.loading) return
-		try {
-			const commits = await git.log({ fs: gitFs()!, dir: '/' })
-			console.info(commits)
-		} catch (e) {
-			console.error(e)
-		}
-	}
-	async function init(gitFs: Resource<any>) {
-		await git.init({ fs: gitFs()!, dir: '/' })
-	}
-
-
-
-	const [ref, setRef] = createSignal<HTMLDivElement>(null!)
-	const term = new Xterm({
-		cursorBlink: true,
-		allowProposedApi: true,
-		convertEol: true
-	})
-
 	const rl = new Readline()
 	const fitAddon = new FitAddon()
 	const searchAddon = new SearchAddon()
@@ -218,7 +271,9 @@ export const Terminal: Component<XtermProps> = props => {
 		const arrow = '\x1b[36m➜\x1b[0m' // Cyan arrow
 		const dir = () => `\x1b[33m${currentPath()}\x1b[0m` // Yellow directory name
 		const promptText = () => `${arrow}  ${dir()} `
-
+		function wait(ms: number): Promise<void> {
+			return new Promise(resolve => setTimeout(resolve, ms))
+		}
 		async function readLine() {
 			const text = (await rl.read(promptText())).split(' ')
 			const command = text.shift()!
@@ -226,6 +281,15 @@ export const Terminal: Component<XtermProps> = props => {
 			if (command === 'clear') {
 				term.clear()
 				await typeEffect(rl, 'Cleared terminal')
+			}
+			if (command === 'clone') {
+				await clone({ promises: fs()?.NodeAPI! })
+			}
+			if (command === 'init') {
+				await init()
+			}
+			if (command === 'loading') {
+				await loadingAnimation(rl, wait(5000))
 			}
 			setTimeout(readLine)
 			term.scrollToBottom()
@@ -239,6 +303,7 @@ export const Terminal: Component<XtermProps> = props => {
 		let isInit = true
 		createEffect(async () => {
 			if (isInit) {
+				await loadingAnimation(rl, wait(1000))
 				await typeEffect(rl, 'Hello from xterm.js')
 				isInit = false
 			}
@@ -246,13 +311,13 @@ export const Terminal: Component<XtermProps> = props => {
 		})
 	})
 	createEffect(() => {
-		term.options.theme = xTermTheme() as ITheme 
+		term.options.theme = xTermTheme() as ITheme
 	})
 	createEffect(() => {
 		fontSize()
 		props.size.height
-		const propsed = fitAddon.proposeDimensions()
-		term.resize(propsed?.cols ?? term.cols, (propsed?.rows ?? 30) - 6)
+		const proposed = fitAddon.proposeDimensions()
+		term.resize(proposed?.cols ?? term.cols, (proposed?.rows ?? 30) - 6)
 	})
 	return (
 		<div

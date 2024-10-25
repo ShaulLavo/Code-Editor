@@ -95,7 +95,7 @@ async function createWorkerStorage(fileName: string = 'store') {
 
 	if (import.meta.hot) {
 		import.meta.hot.dispose(() => {
-			console.log('Disposing worker storage')
+			console.info('Disposing worker storage')
 			accessHandle.close()
 		})
 	}

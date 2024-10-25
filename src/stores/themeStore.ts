@@ -66,6 +66,7 @@ import {
 	xTermPoimandresTheme
 } from '../themes/poimandres'
 import { mojo, mojoBracketColors, xTermMojoTheme } from '~/themes/mojo'
+import { getLighterRgbColor } from '~/lib/color'
 
 type ThemeSettingType = {
 	theme: Extension
@@ -266,12 +267,12 @@ const [baseFontSize, setBaseFontSize] = makePersisted(createSignal(16), {
 })
 
 const [currentThemeName, setTheme] = makePersisted(
-	createSignal<ThemeKey>('poimandres'),
+	createSignal<ThemeKey>('mojo'),
 	{ name: 'theme' }
 )
 
 const currentThemeSettings = () =>
-	themeSettings[currentThemeName() ?? 'poimandres']
+	themeSettings[currentThemeName() ?? 'mojo'] ?? themeSettings.poimandres
 const currentTheme = () => currentThemeSettings().theme
 const currentColor = () => currentThemeSettings().color
 const currentBackground = () => currentThemeSettings().background
@@ -287,7 +288,8 @@ const termColors = () => ({
 	color1: currentThemeSettings().color1,
 	color2: currentThemeSettings().color2
 })
-
+const dragHandleColor = () =>
+	getLighterRgbColor(currentColor(), isDark() ? 0.05 : 0.1)
 export {
 	baseFontSize,
 	bracketColors,
@@ -300,7 +302,8 @@ export {
 	setTheme,
 	termColors,
 	themeSettings,
-	xTermTheme
+	xTermTheme,
+	dragHandleColor
 }
 
 export type { ThemeKey, ThemeSetting }

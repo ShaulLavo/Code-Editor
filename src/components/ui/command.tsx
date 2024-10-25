@@ -152,6 +152,7 @@ function getSiblings(element: Element): Element[] {
 const CommandItem: Component<
 	ParentProps<CommandPrimitive.CommandItemProps> & {
 		onHover?: () => void
+		isSelected?: boolean
 	}
 > = props => {
 	const [local, others] = splitProps(props, ['class'])
@@ -159,14 +160,13 @@ const CommandItem: Component<
 	onMount(() => {
 		const observer = new MutationObserver(mutations => {
 			mutations.forEach(mutation => {
-				if (mutation.attributeName === 'aria-selected') {
+				if (mutation.attributeName === 'data-selected') {
 					const isSelected =
-						commandItemRef.getAttribute('aria-selected') === 'true'
+						commandItemRef.getAttribute('data-selected') === 'true'
 					if (isSelected) {
+						console.log(commandItemRef.getAttribute('data-value'))
 						others.onHover?.()
-						// Perform any additional actions when selected
 					} else {
-						// Perform any additional actions when deselected
 					}
 				}
 			})
@@ -174,12 +174,13 @@ const CommandItem: Component<
 
 		observer.observe(commandItemRef, {
 			attributes: true,
-			attributeFilter: ['aria-selected']
+			attributeFilter: ['data-selected']
 		})
-		if (others.value === currentThemeName()) {
-			commandItemRef.setAttribute('aria-selected', 'true')
-			commandItemRef.setAttribute('data-selected', 'true')
-		}
+
+		// if (!(others.value === currentThemeName())) {
+		// 	commandItemRef.setAttribute('data-selected', 'false')
+		// }
+
 		onCleanup(() => {
 			observer.disconnect()
 		})

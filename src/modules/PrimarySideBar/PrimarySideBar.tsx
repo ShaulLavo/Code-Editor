@@ -1,20 +1,24 @@
-import { usePanelContext } from '@corvu/resizable'
-import { onMount } from 'solid-js'
+import { FsContext } from '~/context/FsContext'
 import { FileSystem } from '../fileSystem/FileSystem'
-import { PrimarySideBarCtxMenu } from './PrimarySideBarCtxMenu'
-import { Portal } from 'solid-js/web'
+import { PrimarySideBarContextMenu } from './PrimarySideBarContextMenu'
+import { For, Match, Show, Switch, useContext } from 'solid-js'
+import { currentEditorId } from '~/stores/appStateStore'
 
 export function PrimarySideBar() {
-	const { panelId, collapse } = usePanelContext()
-	onMount(() => {
-		console.log(panelId())
-		collapse()
-	})
+	const isSelfReactive = true
 	return (
-		// <Portal>
-		<PrimarySideBarCtxMenu>
-			<FileSystem />
-		</PrimarySideBarCtxMenu>
-		// </Portal>
+		<PrimarySideBarContextMenu>
+			<Show when={!isSelfReactive} fallback={<FileSystem />}>
+				<Switch>
+					<For each={Object.entries(useContext(FsContext)!.fsContexts)}>
+						{([id, fs]) => (
+							<Match when={id === currentEditorId()}>
+								<FileSystem nodes={fs.nodes()} />
+							</Match>
+						)}
+					</For>
+				</Switch>
+			</Show>
+		</PrimarySideBarContextMenu>
 	)
 }

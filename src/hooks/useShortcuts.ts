@@ -31,7 +31,6 @@ export const useShortcuts = (
 
 	hotkeys('alt+shift+f', event => {
 		event.preventDefault()
-		console.log('alt+shift+f')
 		handleFormat('alt+shift+f')()
 	})
 

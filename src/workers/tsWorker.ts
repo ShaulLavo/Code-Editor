@@ -1,7 +1,8 @@
 import {
 	createDefaultMapFromCDN,
 	createSystem,
-	createVirtualTypeScriptEnvironment
+	createVirtualTypeScriptEnvironment,
+	VirtualTypeScriptEnvironment
 } from '@typescript/vfs'
 import lzstring from 'lz-string'
 import ts from 'typescript'
@@ -12,7 +13,7 @@ import * as Comlink from 'comlink'
 import { compilerOptions } from '../constants/constants'
 
 let storage: Awaited<ReturnType<typeof createWorkerStorage>>
-let system: ts.System = null!
+let virtualTypeScriptEnvironment: VirtualTypeScriptEnvironment = null!
 const worker = createWorker(async () => {
 	storage = await createWorkerStorage()
 	const fsMap = await createDefaultMapFromCDN(
@@ -24,8 +25,14 @@ const worker = createWorker(async () => {
 		undefined,
 		storage
 	)
-	system = createSystem(fsMap)
-	return createVirtualTypeScriptEnvironment(system, [], ts, compilerOptions)
+	virtualTypeScriptEnvironment = createVirtualTypeScriptEnvironment(
+		createSystem(fsMap),
+		[],
+		ts,
+		compilerOptions
+	)
+
+	return virtualTypeScriptEnvironment
 })
-Comlink.expose({ ...worker, ...system })
+Comlink.expose({ ...worker, ...virtualTypeScriptEnvironment })
 self.postMessage('ready')
