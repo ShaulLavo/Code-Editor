@@ -56,7 +56,7 @@ import alt_markdown from '~/assets/icons2/markdown.svg'
 import alt_perl from '~/assets/icons2/perl.svg'
 import alt_rust from '~/assets/icons2/rust.svg'
 import alt_swift from '~/assets/icons2/swift.svg'
-import alt_typescript_def from '~/assets/icons2/typescript-def.svg'
+import alt_typescript_def from '~/assets/icons2/typescriptdef.svg'
 
 export const fileExtIconMap = {
 	tsx: alt_react_ts,
