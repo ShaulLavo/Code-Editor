@@ -22,11 +22,14 @@ import {
 import '~/xterm.css'
 import { Main } from './modules/main/Main'
 import { setCSSVariable } from './lib/dom'
+import { fontFamily, fontFamilyWithFallback } from './stores/fontStore'
 
 const App: Component = () => {
 	const storageManager = createLocalStorageManager('vite-ui-theme')
 
 	createEffect(() => {
+		setCSSVariable('--font-family', fontFamilyWithFallback())
+
 		setCSSVariable('--current-color', currentColor())
 		setCSSVariable('--current-background', currentBackground())
 

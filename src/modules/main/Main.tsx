@@ -45,7 +45,11 @@ import '~/xterm.css'
 import { MainContent } from './MainContent'
 import { CompletionContext } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
-import { setFontSelection } from '~/stores/fontStore'
+import {
+	fontFamilyWithFallback,
+	setAvailableFonts,
+	setFontSelection
+} from '~/stores/fontStore'
 
 export let worker: TypeScriptWorker = null!
 
@@ -114,12 +118,21 @@ export const Main: Component = () => {
 				console.error('Error handling fontLinks file:', error)
 			}
 			hasLoadedFontSelection = true
+			// setFontSelection(fontLinks)
+			const fontFaces = Array.from(await document.fonts.ready)
+			const availableFonts = fontFaces.reduce<Record<string, FontFace>>(
+				(acc, font) => {
+					acc[font.family] = font
+					return acc
+				},
+				{}
+			)
+			const fontNames = fontFaces.map(font => font.family.split(' ').join(''))
+			fontNames.forEach(fontName => {
+				delete fontLinks[fontName]
+			})
 			setFontSelection(fontLinks)
-			// document.fonts.ready.then(fontFaceSet => {
-			// 	Array.from(fontFaceSet).forEach(fontFace => {
-			// 		console.log(fontFace.family)
-			// 	})
-			// })
+			setAvailableFonts(availableFonts)
 		})
 	)
 
@@ -180,7 +193,7 @@ export const Main: Component = () => {
 				ref={container}
 				class="dockview-theme-dark"
 				style={{
-					'font-family': 'JetBrains Mono, monospace',
+					'font-family': fontFamilyWithFallback(),
 					height: '100vh',
 					overflow: 'hidden',
 					'background-color': currentBackground()

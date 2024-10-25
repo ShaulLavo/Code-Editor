@@ -52,20 +52,19 @@ import {
 import { NullableSize } from '@solid-primitives/resize-observer'
 
 // import { createInnerZoom } from '~/hooks/createInnerZoom'
+import { html } from '@codemirror/lang-html'
+import { json } from '@codemirror/lang-json'
+import { python } from '@codemirror/lang-python'
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
 import { useFs } from '~/context/FsContext'
 import { createInnerZoom } from '~/hooks/createInnerZoom'
+import { viewTransition } from '~/hooks/viewTransition'
 import { autoHide } from '~/lib/dom'
 import { createKeymap } from '~/lib/keymap'
 import { worker } from '~/modules/main/Main'
 import { setCurrentEditorIndex } from '~/stores/appStateStore'
 import { EditorNav } from './EditorNav'
-import { viewTransition } from '~/hooks/viewTransition'
-import { run } from 'node:test'
-import { python } from '@codemirror/lang-python'
-import { json } from '@codemirror/lang-json'
-import { create } from 'domain'
 export interface EditorProps {
 	defaultTheme?: ThemeKey
 	formatOnMount?: Accessor<boolean>
@@ -92,6 +91,7 @@ export const Editor = ({
 		isTs,
 		isPython,
 		isJSON,
+		isHtml,
 		filePath,
 		code,
 		setCode
@@ -205,6 +205,15 @@ export const Editor = ({
 	)
 	createExtension(() => (isPython() ? python() : []))
 	createExtension(() => (isJSON() ? json() : []))
+	createExtension(() =>
+		isHtml()
+			? html({
+					autoCloseTags: true,
+					matchClosingTags: true,
+					selfClosingTags: true
+				})
+			: []
+	)
 	createExtension(() => (showLineNumber?.() ? lineNumbers() : []))
 	createExtension(currentTheme)
 	createExtension(foldGutter)
@@ -227,7 +236,7 @@ export const Editor = ({
 		if (!isTs() || !isWorkerReady() || !worker || !filePath()) return []
 
 		const tsExtensions = [
-			tsFacetWorker.of({ worker, path: filePath()! }),
+			tsFacetWorker.of({ worker: worker as any, path: filePath()! }),
 			tsSyncWorker(),
 			tsLinterWorker(),
 			tsHoverWorker()

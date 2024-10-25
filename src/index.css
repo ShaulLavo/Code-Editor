@@ -157,10 +157,10 @@
 }
 
 .cm-scroller {
-	font-family: 'JetBrains Mono', monospace !important;
+	font-family: var(--font-family), monospace !important;
 }
 .xterm-rows {
-	font-family: 'JetBrains Mono', monospace !important;
+	font-family: var(--font-family), monospace !important;
 }
 .cm-foldPlaceholder {
 	background-color: #00000000 !important;

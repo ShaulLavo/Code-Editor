@@ -294,14 +294,10 @@ export function useDnD(props: UseDnDProps) {
 	return { setDraggable, setDropzone, dropzone }
 }
 
-export function useFileDrop() {
+export function useFileDrop(refetchNodes: () => Promise<void>) {
 	const { fs } = currentEditorFs()
 	const { setDropzone, setDraggable, dropzone } = useDnD({
 		onDrop: async (event: DragEvent) => {
-			console.log('DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP')
-			console.log('DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP')
-			console.log('DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP')
-			console.log('DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP')
 			const fileSystem = fs()
 			if (!fileSystem) return
 			const to = (event.target as HTMLElement)?.id
@@ -327,6 +323,7 @@ export function useFileDrop() {
 					}
 				}
 			}
+			await refetchNodes()
 		},
 		onDragOver: (event: DragEvent) => {
 			event.preventDefault()

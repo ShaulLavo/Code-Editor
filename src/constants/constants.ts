@@ -10,7 +10,7 @@ export const compilerOptions: ts.CompilerOptions = {
 	isolatedModules: true,
 	jsx: ts.JsxEmit.React,
 	types: ['jsdom', 'node', 'react'],
-	lib: ['es5', 'es6', 'dom']
+	lib: ['es5', 'es6', 'dom', 'ES2015']
 } as const
 
 export const EDITOR_FS_NAME = 'file-system'

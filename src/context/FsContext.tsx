@@ -46,6 +46,7 @@ export interface FileSystemCtx {
 	isTs: Accessor<boolean>
 	isPython: Accessor<boolean>
 	isJSON: Accessor<boolean>
+	isHtml: Accessor<boolean>
 	prettierConfig: Accessor<object>
 	setLastKnownFile: Setter<string>
 }
@@ -116,6 +117,9 @@ function createFSContextInstance({
 		extensionMap[currentExtension() as keyof typeof extensionMap] === 'python'
 	const isJSON = () =>
 		extensionMap[currentExtension() as keyof typeof extensionMap] === 'json'
+	const isHtml = () =>
+		['html', 'htm', 'svg', 'xml'].includes(currentExtension()!)
+
 	const prettierConfig = () => getConfigFromExt(currentExtension())
 
 	createResource(fs, fs => loadTabData(fileMap, fs, tabKey))
@@ -178,6 +182,7 @@ function createFSContextInstance({
 		isTs,
 		isPython,
 		isJSON,
+		isHtml,
 		prettierConfig,
 		setLastKnownFile
 	}

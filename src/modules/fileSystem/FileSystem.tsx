@@ -20,7 +20,7 @@ export const FileSystem: Component<FileSystemProps> = props => {
 		ref: container,
 		key: 'explorer'
 	})
-	const { setDropzone } = useFileDrop()
+	const { setDropzone } = useFileDrop(async () => void (await refetchNodes()))
 	return (
 		<div
 			ref={ref => {

@@ -15,7 +15,3 @@ export const [editorHight, setEditorHight] = createSignal(window.innerHeight)
 export const [isTsLoading, setIsTsLoading] = createSignal(false)
 export const [isGitLoading, setIsGitLoading] = createSignal(false)
 export const [isMiniMap, setIsMiniMap] = createSignal(true)
-
-export const editorFontFamily = {
-	'font-family': "'JetBrains Mono', monospace"
-}

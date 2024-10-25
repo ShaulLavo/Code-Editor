@@ -49,6 +49,11 @@ import {
 } from '~/stores/themeStore'
 import { capitalizeFirstLetter } from '~/lib/string'
 import { currentEditorFs } from '~/stores/appStateStore'
+import {
+	availableFonts,
+	fontFamilyWithFallback,
+	fontSelection
+} from '~/stores/fontStore'
 
 interface HeaderProps {
 	code: Resource<string | undefined>
@@ -58,7 +63,9 @@ interface HeaderProps {
 
 export const CmdK: Component<HeaderProps> = props => {
 	const [open, setOpen] = createSignal(false)
-	const [currentMenu, setCurrentMenu] = createSignal<'base' | 'theme'>('base')
+	const [currentMenu, setCurrentMenu] = createSignal<'base' | 'theme' | 'font'>(
+		'base'
+	)
 	const [value, setValue] = createSignal('')
 
 	// super hacky way to set the default value
@@ -102,7 +109,7 @@ export const CmdK: Component<HeaderProps> = props => {
 		}
 	})
 	return (
-		<div style={{ 'font-family': 'JetBrains Mono' }}>
+		<div style={{ 'font-family': fontFamilyWithFallback() }}>
 			<CommandDialog open={open()} onOpenChange={setOpen}>
 				<Command
 					style={{ color: currentColor(), background: currentBackground() }}
@@ -130,6 +137,9 @@ export const CmdK: Component<HeaderProps> = props => {
 							<Match when={currentMenu() === 'theme'}>
 								<ThemeItems setOpen={setOpen} />
 							</Match>
+							<Match when={currentMenu() === 'font'}>
+								<Fonts />
+							</Match>
 						</Switch>
 					</CommandList>
 				</Command>
@@ -139,7 +149,7 @@ export const CmdK: Component<HeaderProps> = props => {
 }
 
 interface BaseItemsProps extends HeaderProps {
-	setCurrentMenu: (menu: 'base' | 'theme') => void
+	setCurrentMenu: (menu: 'base' | 'theme' | 'font') => void
 	setOpen: (open: boolean) => void
 }
 
@@ -163,6 +173,15 @@ const BaseItems: Component<BaseItemsProps> = ({
 					}}
 				>
 					<span>Change Theme</span>
+				</CommandItem>
+			</CommandGroup>
+			<CommandGroup heading="Font">
+				<CommandItem
+					onSelect={e => {
+						setCurrentMenu('font')
+					}}
+				>
+					<span>Change font</span>
 				</CommandItem>
 			</CommandGroup>
 
@@ -228,6 +247,64 @@ const BaseItems: Component<BaseItemsProps> = ({
 				>
 					<span>Create New FS demoNodes</span>
 				</CommandItem>
+			</CommandGroup>
+		</>
+	)
+}
+
+interface FontsProps {}
+
+const Fonts: Component<FontsProps> = props => {
+	return (
+		<>
+			<CommandGroup heading="Available">
+				<For each={Object.keys(availableFonts())}>
+					{font => (
+						<CommandItem
+							// onHover={() => {
+							// 	setTheme(theme as ThemeKey)
+							// }}
+							// onSelect={() => {
+							// 	setTheme(theme as ThemeKey)
+							// 	props.setOpen(false)
+							// }}
+							value={font}
+							// data-selected={currentThemeName() === theme}
+							// isSelected={currentThemeName() === theme}
+							// isDefaultSelected={currentThemeName() === theme}
+						>
+							<span>
+								{capitalizeFirstLetter(font)
+									.replace(/([A-Z])/g, ' $1')
+									.trim()}
+							</span>
+						</CommandItem>
+					)}
+				</For>
+			</CommandGroup>
+			<CommandGroup heading="Download">
+				<For each={Object.keys(fontSelection())}>
+					{font => (
+						<CommandItem
+							// onHover={() => {
+							// 	setTheme(theme as ThemeKey)
+							// }}
+							onSelect={async name => {
+								const font = await fetch(fontSelection()[name])
+								console.log('font', font)
+								// setTheme(theme as ThemeKey)
+								// props.setOpen(false)
+							}}
+							value={font}
+							// isSelected={currentThemeName() === theme}
+							// isDefaultSelected={currentThemeName() === theme}
+						>
+							<span>
+								{capitalizeFirstLetter(font).replace(/([A-Z])/g, ' $1')}
+							</span>
+						</CommandItem>
+					)}
+				</For>
 			</CommandGroup>
 		</>
 	)
