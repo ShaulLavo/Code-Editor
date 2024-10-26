@@ -106,7 +106,6 @@ const Tab = ({
 			}
 			fileMap.delete(file)
 			setPathsToOpen(current => current.filter(path => path !== file))
-			console.log('fileMap', fileMap, pathsToOpen())
 			await saveTabs(fileMap.keys(), fs()!, 'editor-' + index + '-tab')
 		})
 	}

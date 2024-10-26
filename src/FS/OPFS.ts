@@ -433,13 +433,10 @@ export class OPFS implements FileSystemAPI {
 	async rename(path: string, name: string) {
 		const idDir = await this.isDirectory(path)
 		const { parentHandle, itemName } = await this.navigateToParentHandle(path)
-		console.log("let's fking GO", parentHandle, itemName)
 		await parentHandle.removeEntry(itemName)
-		console.log('removed entry', 'isDir?', idDir)
 		idDir
 			? await parentHandle.getDirectoryHandle(name, { create: true })
 			: await parentHandle.getFileHandle(name, { create: true })
-		console.log('created new entry')
 		await this.triggerWatchEvent('update', path)
 	}
 	async moveDirectory(

@@ -37,7 +37,6 @@ const App: Component = () => {
 			for (const [key, color] of Object.entries(bracketColors())) {
 				setCSSVariable('--rainbow-bracket-' + key, color as string)
 			}
-			1
 		}
 	})
 

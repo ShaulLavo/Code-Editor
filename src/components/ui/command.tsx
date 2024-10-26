@@ -151,7 +151,7 @@ function getSiblings(element: Element): Element[] {
 }
 const CommandItem: Component<
 	ParentProps<CommandPrimitive.CommandItemProps> & {
-		onHover?: () => void
+		onHover?: (value: string) => void
 		isSelected?: boolean
 	}
 > = props => {
@@ -164,8 +164,7 @@ const CommandItem: Component<
 					const isSelected =
 						commandItemRef.getAttribute('data-selected') === 'true'
 					if (isSelected) {
-						console.log(commandItemRef.getAttribute('data-value'))
-						others.onHover?.()
+						others.onHover?.(commandItemRef.getAttribute('data-value')!)
 					} else {
 					}
 				}

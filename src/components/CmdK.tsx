@@ -51,9 +51,15 @@ import { capitalizeFirstLetter } from '~/lib/string'
 import { currentEditorFs } from '~/stores/appStateStore'
 import {
 	availableFonts,
+	fontFamily,
 	fontFamilyWithFallback,
-	fontSelection
+	fontSelection,
+	setAvailableFonts,
+	setFontFamily,
+	setFontSelection
 } from '~/stores/fontStore'
+import { doc } from 'prettier'
+import { loadNerdFont } from '~/lib/fonts'
 
 interface HeaderProps {
 	code: Resource<string | undefined>
@@ -69,8 +75,18 @@ export const CmdK: Component<HeaderProps> = props => {
 	const [value, setValue] = createSignal('')
 
 	// super hacky way to set the default value
-	const defaultValue = () =>
-		currentMenu() === 'base' ? 'Change Theme' : currentThemeName()
+	const defaultValue = () => {
+		if (currentMenu() === 'base') {
+			return 'Change Theme'
+		}
+		if (currentMenu() === 'theme') {
+			return currentThemeName()
+		}
+		if (currentMenu() === 'font') {
+			return fontFamily()
+		}
+		return ''
+	}
 	let hasRun = false
 	createEffect(
 		on(currentMenu, () => {
@@ -138,7 +154,7 @@ export const CmdK: Component<HeaderProps> = props => {
 								<ThemeItems setOpen={setOpen} />
 							</Match>
 							<Match when={currentMenu() === 'font'}>
-								<Fonts />
+								<Fonts setOpen={setOpen} />
 							</Match>
 						</Switch>
 					</CommandList>
@@ -160,8 +176,14 @@ const BaseItems: Component<BaseItemsProps> = ({
 	setCurrentMenu,
 	setOpen
 }) => {
-	const { fs, currentExtension, setCurrentPath, fileMap, setLastKnownFile } =
-		currentEditorFs()
+	const {
+		fs,
+		currentExtension,
+		setCurrentPath,
+		fileMap,
+		setLastKnownFile,
+		refetchNodes
+	} = currentEditorFs()
 	return (
 		<>
 			<CommandEmpty>No results found.</CommandEmpty>
@@ -252,23 +274,30 @@ const BaseItems: Component<BaseItemsProps> = ({
 	)
 }
 
-interface FontsProps {}
+interface FontsProps {
+	setOpen: (open: boolean) => void
+}
 
 const Fonts: Component<FontsProps> = props => {
+	const { fs, refetchNodes } = currentEditorFs()
 	return (
 		<>
 			<CommandGroup heading="Available">
 				<For each={Object.keys(availableFonts())}>
 					{font => (
 						<CommandItem
-							// onHover={() => {
-							// 	setTheme(theme as ThemeKey)
-							// }}
+							onHover={name => {
+								setFontFamily(name)
+							}}
 							// onSelect={() => {
 							// 	setTheme(theme as ThemeKey)
 							// 	props.setOpen(false)
 							// }}
 							value={font}
+							onSelect={name => {
+								setFontFamily(name)
+								props.setOpen(false)
+							}}
 							// data-selected={currentThemeName() === theme}
 							// isSelected={currentThemeName() === theme}
 							// isDefaultSelected={currentThemeName() === theme}
@@ -290,10 +319,19 @@ const Fonts: Component<FontsProps> = props => {
 							// 	setTheme(theme as ThemeKey)
 							// }}
 							onSelect={async name => {
-								const font = await fetch(fontSelection()[name])
-								console.log('font', font)
-								// setTheme(theme as ThemeKey)
-								// props.setOpen(false)
+								await loadNerdFont(name, fs()!, font => {
+									setAvailableFonts(current => ({
+										...current,
+										[name]: font
+									}))
+									setFontSelection(current => {
+										delete current[name]
+										return { ...current }
+									})
+									setFontFamily(name)
+									refetchNodes()
+								})
+								props.setOpen(false)
 							}}
 							value={font}
 							// isSelected={currentThemeName() === theme}
@@ -366,6 +404,7 @@ const ThemeItems: Component<ThemeItemsProps> = props => {
 							}}
 							value={theme}
 							isSelected={currentThemeName() === theme}
+
 							// isDefaultSelected={currentThemeName() === theme}
 						>
 							<span>

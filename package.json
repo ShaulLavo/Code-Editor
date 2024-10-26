@@ -67,6 +67,7 @@
 		"@xterm/addon-search": "^0.15.0",
 		"@xterm/addon-webgl": "^0.18.0",
 		"@xterm/xterm": "^5.5.0",
+		"@zip.js/zip.js": "^2.7.52",
 		"babel-runtime": "^6.26.0",
 		"browserfs": "^1.4.3",
 		"buffer": "^6.0.3",

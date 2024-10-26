@@ -48,9 +48,12 @@ import { EditorState } from '@codemirror/state'
 import {
 	fontFamilyWithFallback,
 	setAvailableFonts,
+	setFontFamily,
 	setFontSelection
 } from '~/stores/fontStore'
-
+import { doc } from 'prettier'
+import { OPFS } from '~/FS/OPFS'
+import { getNerdFontLinks } from '~/lib/fonts'
 export let worker: TypeScriptWorker = null!
 
 export const Main: Component = () => {
@@ -60,7 +63,6 @@ export const Main: Component = () => {
 	initTsWorker(async tsWorker => {
 		worker = tsWorker
 		// await worker.createFile(filePath()!, code()!)
-		// console.log(await worker.getSourceFile(filePath()!))
 		setIsWorkerReady(true)
 	}, setIsTsLoading)
 
@@ -75,51 +77,16 @@ export const Main: Component = () => {
 	const terminalContainerSize = createElementSize(terminalContainer)
 	const statusBarSize = createElementSize(statusBarRef)
 
-	async function getNerdFontLinks(): Promise<{ [fontName: string]: string }> {
-		const response = await fetch('https://www.nerdfonts.com/font-downloads')
-		const html = await response.text()
-		const parser = new DOMParser()
-		const doc = parser.parseFromString(html, 'text/html')
-
-		return [...doc.querySelectorAll('a')]
-			.filter(link => link?.textContent?.trim().toLowerCase() === 'download')
-			.reduce(
-				(acc, link) => {
-					const fontName = link.href.split('/').pop()?.replace('.zip', '')
-					if (fontName) {
-						acc[fontName] = link.href
-					}
-					return acc
-				},
-				{} as { [fontName: string]: string }
-			)
-	}
-
 	let hasLoadedFontSelection = false
 	createEffect(
 		on(fs, async fileSystem => {
 			if (!fileSystem || hasLoadedFontSelection) return
 
 			const fileName = 'fontLinks.json'
-			let fontLinks: Record<string, string> = {}
-			try {
-				//we get the fontLinks from cache if it exists
-				//TODO add revalidation strategy
-				if (await fileSystem.exists(fileName)) {
-					const currentData = await (await fileSystem.read(fileName)).text()
-					if (currentData && currentData.trim().length > 0) {
-						fontLinks = JSON.parse(currentData)
-					}
-				}
+			const fontLinks = await getNerdFontLinks(fs()!)
+			let fontFaces = Array.from(await document.fonts.ready)
 
-				fontLinks = await getNerdFontLinks()
-				await fileSystem.write(fileName, JSON.stringify(fontLinks, null, 2))
-			} catch (error) {
-				console.error('Error handling fontLinks file:', error)
-			}
 			hasLoadedFontSelection = true
-			// setFontSelection(fontLinks)
-			const fontFaces = Array.from(await document.fonts.ready)
 			const availableFonts = fontFaces.reduce<Record<string, FontFace>>(
 				(acc, font) => {
 					acc[font.family] = font
@@ -127,10 +94,55 @@ export const Main: Component = () => {
 				},
 				{}
 			)
-			const fontNames = fontFaces.map(font => font.family.split(' ').join(''))
+			const fonts = await fileSystem.list('root/fonts')
+			const savedFonts = await Promise.all(
+				fonts.map(async font => {
+					if (font.name === 'fontLinks.json') return
+					return fileSystem.read(font.path)
+				})
+			)
+			await Promise.all(
+				savedFonts
+					.filter(f => !!f)
+					.map(async (font: File) => {
+						const fontBuffer = await font.arrayBuffer()
+
+						const fontFace = new FontFace(font.name, fontBuffer)
+
+						availableFonts[font.name] = fontFace
+						document.fonts.add(fontFace)
+						try {
+							await fontFace.load()
+							document.fonts.add(fontFace)
+							await document.fonts.ready
+							if (!document.fonts.check('italic bold 16px ' + font.name)) {
+								console.log('bad font', font.name)
+							}
+						} catch (e) {
+							console.error('font load error', e)
+						}
+						return fontFace
+							.load()
+							.then(() => {
+								console.log('font loaded', font.name)
+								const isFontAvailable = Array.from(document.fonts.values())
+								console.log(`Font ${font.name} available:`, isFontAvailable)
+							})
+							.catch(e => {
+								console.error('font load error', e)
+							})
+					})
+			)
+
+			const fontNames = Object.keys(availableFonts).map(font =>
+				font.split(' ').join('')
+			)
+
+			console.log('fontNames', fontNames)
 			fontNames.forEach(fontName => {
 				delete fontLinks[fontName]
 			})
+
 			setFontSelection(fontLinks)
 			setAvailableFonts(availableFonts)
 		})

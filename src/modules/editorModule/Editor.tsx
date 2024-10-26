@@ -111,7 +111,6 @@ export const Editor = ({
 				preventDefault: true
 			})
 		)
-		console.log(KeyBindings)
 		const defaultKeymap = createKeymap(editorFS, KeyBindings)
 		const createColorCycler = () => {
 			const colors = Object.values(bracketColors())
